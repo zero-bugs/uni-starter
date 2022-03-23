@@ -31,7 +31,7 @@ model tbl_img {
 
 // basic attribute, always changed.
 model tbl_img_ext {
-    id String @unique @
+    id String @unique
     views Int
     favorites Int
     ratio Decimal
