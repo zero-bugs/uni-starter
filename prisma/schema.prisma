@@ -1,24 +1,66 @@
-datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  author    User?   @relation(fields: [authorId], references: [id])
-  authorId  Int?
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
+// basic attribute, not always changed.
+model tbl_img {
+  id String @unique
+  file_type String
+  file_size Int
+  dimension_x Int
+  dimension_y Int
+  purity String
+  category String
+  path String
+  url String
+  source String
+  colors String
+  desc String
+  created_time DateTime
+  create_at DateTime
+  update_at DateTime
+}
+
+// basic attribute, always changed.
+model tbl_img_ext {
+    id String @unique @
+    views Int
+    favorites Int
+    ratio Decimal
+    tags String
+    author_name String
+    author_id String
+    artist_name String
+    artist_id String
+    create_at DateTime
+    update_at DateTime
+}
+
+// who upload image
+model tbl_author {
+  name String @unique
+  id String
+  desc String
+  type String
+  create_at DateTime
+  update_at DateTime
+}
+
+// tag info
+model tbl_tag {
+  name String @unique
+  alias String
+  id String @unique
+  category_id String
+  category String
+  create_at DateTime
+  update_at DateTime
 }
