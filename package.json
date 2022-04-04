@@ -1,19 +1,29 @@
 {
   "name": "script",
   "license": "MIT",
-  "devDependencies": {
-    "@types/node": "16.11.26",
-    "prisma": "^3.10.0",
-    "ts-node": "10.6.0",
-    "typescript": "4.6.2"
-  },
   "scripts": {
-    "dev": "ts-node ./script.ts"
-  },
-  "dependencies": {
-    "@prisma/client": "3.10.0"
+    "dev": "ts-node src/ts/apiRequest.ts",
+    "start": "concurrently \"npm run watch\" \"npm run serve\"",
+    "start:dev": "nodemon",
+    "serve": "nodemon -w build/index.js",
+    "watch": "npm run clean && tsc -w",
+    "clean": "rimraf ./build",
+    "tsc": "tsc -p tsconfig.json && tsc -p tsconfig-cjs.json"
   },
   "engines": {
-    "node": ">=12.2.0"
+    "node": ">=16.0.0"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^17.0.23",
+    "nodemon": "^2.0.15",
+    "prisma": "3.10.0",
+    "ts-node": "^10.7.0",
+    "typescript": "^4.7.0-dev.20220403"
+  },
+  "dependencies": {
+    "@prisma/client": "3.10.0",
+    "node-fetch": "^3.2.3",
+    "proxy-agent": "^5.0.0"
   }
 }
