@@ -30,8 +30,4 @@ let log4jsConfig = {
     }
 }
 
-configure(log4jsConfig)
-const logger4js = getLogger()
-
-
-export default logger4js;
+export default log4jsConfig;

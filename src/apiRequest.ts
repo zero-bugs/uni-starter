@@ -1,17 +1,18 @@
-import fetch from 'node-fetch' ;
+import fetch from 'node-fetch';
 import httpsAgent from 'https-proxy-agent';
-import CustomEvent from "./customEvent"
-import {Worker, isMainThread, parentPort, workerData} from 'worker_threads';
+import {parentPort} from 'worker_threads';
 
-import logger4js from "./config/log4jsConfig";
+import pkg from 'log4js';
+const { configure, getLogger } = pkg;
 
-const {HttpsProxyAgent} = httpsAgent
+import CustomEvent from "./config/customEvent.js";
+import log4jsConfig from "./config/log4jsConfig.js";
 
-logger4js.warn("ffafa{},{}", 1,2);
+configure(log4jsConfig)
+let logger4js = getLogger('app')
 
-async function apiSearch(link: string,) {
+export async function apiSearch(link: string,) {
     await fetch(link, {
-        agent: new HttpsProxyAgent("xx"),
     }).then(res => {
         if (res.status !== 200 && res.status !== 201) {
             parentPort?.emit(CustomEvent.CLIENT_ERR, {
