@@ -1,11 +1,35 @@
+import fs from 'fs'
+import httpsAgent from "https-proxy-agent";
+import {getProxyConfFile} from "../@utils/utils.js";
+
 class ProxyConfig {
     proxySwitch: boolean = false;
-    http_proxy: string = process.env.http_proxy || process.env.HTTP_PROXY || "http://127.0.0.1:80";
-    https_proxy: string = process.env.https_proxy || process.env.HTTPS_PROXY || "http://127.0.0.1:80";
-    no_proxy: string = process.env.no_proxy || process.env.NO_PROXY || "";
+    http_proxy: string;
+    https_proxy: string;
+    no_proxy: string;
     
     constructor() {
+        let filePath = getProxyConfFile();
+        let proxyJson = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+        this.http_proxy = process.env.http_proxy || process.env.HTTP_PROXY || proxyJson['http_proxy'];
+        this.https_proxy = process.env.https_proxy || process.env.HTTPS_PROXY || proxyJson['https_proxy'];
+        this.no_proxy = process.env.no_proxy || process.env.NO_PROXY || proxyJson['no_proxy'];
+        this.proxySwitch = proxyJson['proxy'];
     }
 }
 
-export default ProxyConfig;
+const proxyConfig = new ProxyConfig();
+
+export function getHttpsProxy(): httpsAgent.HttpsProxyAgent | boolean {
+    if (!proxyConfig.proxySwitch) {
+        return false;
+    }
+    return new httpsAgent.HttpsProxyAgent(proxyConfig.https_proxy);
+}
+
+export function getHttpProxy(): httpsAgent.HttpsProxyAgent | boolean {
+    if (!proxyConfig.proxySwitch) {
+        return false;
+    }
+    return new httpsAgent.HttpsProxyAgent(proxyConfig.http_proxy);
+}

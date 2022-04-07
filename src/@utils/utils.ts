@@ -18,9 +18,14 @@ export function getApiListFile() {
     return `${getTemplatePath()}${path.sep}apiList.json`;
 }
 
+export function getProxyConfFile() {
+    return `${getTemplatePath()}${path.sep}proxyConfig.json`;
+}
+
 export function getGlobalConfFile() {
     return `${getTemplatePath()}${path.sep}appConfig.json`;
 }
 
 import log4jsConf from 'log4js';
-export const { configure, getLogger } = log4jsConf;
+
+export const {configure, getLogger} = log4jsConf;

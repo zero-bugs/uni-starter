@@ -1,49 +1,37 @@
-class BasicConfig {
-    type: string | undefined;
-    host: string | undefined;
-    protocol: string | undefined;
-    apiKey: string | undefined;
-    queryCondition: {};
-    outputPath: string | undefined;
+import fs from "fs";
+import {getApiListFile, getGlobalConfFile} from "../@utils/utils.js";
 
-    constructor(props: any) {
-        this.type = props['type'] || "WH";
-        this.host = props['host'] || 'wallhaven.cc';
-        this.protocol = props['protocol'] || 'https';
-        this.apiKey = props['apiKey'] || '';
-        this.queryCondition = props['queryCondition'] || {
-            purity: 111,
-            sorting: 'random',
-            order: 'desc'
-        };
-        this.outputPath = props['outputPath'] || '.';
-    }
+export enum PicLibType {
+    WH = "wh",
+    KH = "kh",
+    YD = "yd",
 }
 
-enum PicLibType {
-    WH = "wallHaven",
-    KH = "ka",
-    YD = "yere",
+export enum ApiKeyId {
+    WH_QUERY_01 = "WH_QUERY_01",
+    WH_QUERY_02 = "WH_QUERY_02",
+    WH_QUERY_03 = "WH_QUERY_03",
+    WH_QUERY_04 = "WH_QUERY_04",
 }
 
-let globalConfig = new Array<BasicConfig>();
-globalConfig.push(new BasicConfig({
-    type: PicLibType.WH,
-    host: 'wallhaven.cc',
-    outputPath: "D:\\temp\\wh"
-}))
+export const apiListConf = JSON.parse(fs.readFileSync(getApiListFile(), 'utf-8'));
 
-export function getUrl(): string {
-    let conf = globalConfig[0];
-    let address = `${conf.protocol}://${conf.host}`;
-    address += `?`;
-    Object.values(conf.queryCondition).forEach(
-        (key, value) => {
-            address += `${key}=${value}&`
+const globalConfig = JSON.parse(fs.readFileSync(getGlobalConfFile(), 'utf-8'));
+
+export function getBaseList(): string {
+    let apiType = globalConfig['type'];
+    let basicObj = apiListConf[apiType].basic;
+    return `${basicObj.protocol}://${basicObj.host}`;
+}
+
+export function getApiEndpoint(apiId: string): string {
+    let apiType = globalConfig['type'];
+    let basicObj = apiListConf[apiType].basic;
+    let uri = '';
+    basicObj.apiList.forEach((element: { apiId: string; uri: string; }) => {
+        if (element.apiId === apiId) {
+            uri = element.uri;
         }
-    );
-    if (conf.apiKey) {
-        address += `/apiKey=${conf.apiKey}`
-    }
-    return address.endsWith('&') ? address.substring(0, address.length - 1) : address;
+    })
+    return `${getBaseList()}${uri}`
 }

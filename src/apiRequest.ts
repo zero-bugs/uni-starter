@@ -20,25 +20,26 @@ export async function whSearchListDefault(endpoint: string, queryParam = {
     "startPage": 1,
     "endPage": 1
 }) {
-    let queryObj = JSON.parse(queryParam);
-    while (queryParam['startPage'] < queryParam['endPage']) {
+    while (queryParam.startPage < queryParam.endPage) {
         await fetch(endpoint, {
             agent: getHttpsProxy(),
         }).then(res => {
             if (res.status !== 200 && res.status !== 201) {
-                parentPort?.emit(CustomEvent.CLIENT_ERR, {
+                parentPort?.emit(CustomEvent.CLIENT_ERR, [{
                     'url': endpoint,
                     'status': res.status
-                })
+                }])
                 logger4js.warn('worker execute failed request url:%s', endpoint)
                 throw new Error(`http error:${res.status}, ${res.body}`);
             }
-            parentPort?.emit(CustomEvent.CLIENT_RES, {
+            parentPort?.emit(CustomEvent.CLIENT_RES, [{
                 'url': endpoint,
                 'status': res.status
-            })
+            }])
             return res.json();
-        }).then(json => console.log(json));
+        }).then((res)=>{
+            setTimeout(() => {}, 5000);
+        });
     }
 }
 
