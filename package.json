@@ -2,12 +2,13 @@
   "name": "script",
   "license": "MIT",
   "scripts": {
-    "dev": "ts-node --trace-warnings --loader ts-node/esm src/ts/apiRequest.ts",
+    "dev": "ts-node --trace-warnings --loader ts-node/esm src/multiThreads.ts",
     "start": "concurrently \"npm run watch\" \"npm run serve\"",
     "start:dev": "nodemon",
-    "serve": "nodemon -w build/index.js",
+    "serve": "nodemon -w dist/index.js",
+    "build": "tsc",
     "watch": "npm run clean && tsc -w",
-    "clean": "rimraf ./build",
+    "clean": "rimraf ./dist",
     "tsc": "tsc --traceResolution -p tsconfig.json"
   },
   "engines": {
@@ -16,6 +17,9 @@
   "type": "module",
   "devDependencies": {
     "@types/node": "^17.0.23",
+    "@typescript-eslint/eslint-plugin": "^5.18.0",
+    "@typescript-eslint/parser": "^5.18.0",
+    "eslint": "^8.12.0",
     "nodemon": "^2.0.15",
     "prisma": "3.10.0",
     "ts-node": "^10.7.0",
