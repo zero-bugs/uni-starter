@@ -1,28 +1,44 @@
 import fetch from 'node-fetch';
-import httpsAgent from 'https-proxy-agent';
 import {parentPort} from 'worker_threads';
 
-import pkg from 'log4js';
-const { configure, getLogger } = pkg;
-
 import CustomEvent from "./config/customEvent.js";
-import log4jsConfig from "./config/log4jsConfig.js";
 
-configure(log4jsConfig)
+import {getLogger} from "./@utils/utils.js";
+import {getHttpsProxy} from "./config/proxyConfig.js";
+
 let logger4js = getLogger('app')
 
-export async function apiSearch(link: string,) {
-    await fetch(link, {
-    }).then(res => {
-        if (res.status !== 200 && res.status !== 201) {
-            parentPort?.emit(CustomEvent.CLIENT_ERR, {
-                'url': link,
+/**
+ * wh: default search
+ * @param endpoint
+ * @param queryParam
+ */
+export async function whSearchListDefault(endpoint: string, queryParam = {
+    "purity": 111,
+    "sorting": 'date_added',
+    "order": 'desc',
+    "startPage": 1,
+    "endPage": 1
+}) {
+    let queryObj = JSON.parse(queryParam);
+    while (queryParam['startPage'] < queryParam['endPage']) {
+        await fetch(endpoint, {
+            agent: getHttpsProxy(),
+        }).then(res => {
+            if (res.status !== 200 && res.status !== 201) {
+                parentPort?.emit(CustomEvent.CLIENT_ERR, {
+                    'url': endpoint,
+                    'status': res.status
+                })
+                logger4js.warn('worker execute failed request url:%s', endpoint)
+                throw new Error(`http error:${res.status}, ${res.body}`);
+            }
+            parentPort?.emit(CustomEvent.CLIENT_RES, {
+                'url': endpoint,
                 'status': res.status
             })
-            logger4js.warn('worker execute failed request url:[]', link)
-            return;
-        }
-        parentPort?.postMessage(res.json());
-    });
+            return res.json();
+        }).then(json => console.log(json));
+    }
 }
 
