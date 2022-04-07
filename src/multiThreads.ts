@@ -1,20 +1,24 @@
-import {Worker, isMainThread, parentPort, workerData} from 'worker_threads';
-
-import { fileURLToPath } from 'url'
-import { dirname } from 'path'
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
+import {isMainThread, parentPort, Worker, workerData} from 'worker_threads';
+import fs from "fs";
+import {fileURLToPath} from 'url'
 
 import {apiSearch} from './apiRequest.js'
-import {getUrl} from './config/configFile.js'
+import {configure, getLog4jsConfFile, getLogger} from "./@utils/utils.js";
+
+const __filename = fileURLToPath(import.meta.url)
+
+// init log4js
+configure(getLog4jsConfFile());
+
+let logger = getLogger(__filename)
 
 function mainThread() {
     for (let i = 0; i < 1; ++i) {
-        let urlLink = getUrl();
-        const worker = new Worker(__filename, {workerData: {
-                urlLink: urlLink,
-                startPage:0,
-            }});
+        const worker = new Worker(__filename, {
+            workerData: {
+                startPage: 0,
+            }
+        });
         worker.on('exit', code => {
             console.log(`main: worker stopped with exit code ${code}`);
         });
