@@ -1,7 +1,8 @@
 import fetch, {RequestInit} from 'node-fetch';
 import {parentPort, threadId} from 'worker_threads';
 
-import {PrismaClient, ImageCreateInput} from '@prisma/client';
+import {PrismaClient,} from '@prisma/client';
+import ImageCreateInput from '@prisma/client'
 
 import CustomEvent from "./config/customEvent.js";
 
@@ -16,7 +17,7 @@ class ResultResp {
     url: string;
     httpCode: number;
     threadId: number;
-    
+
     constructor(type: string, url: string, status: number, threadId: number) {
         this.type = type;
         this.url = url;
@@ -42,13 +43,13 @@ export async function whSearchListDefault(endpoint: string, queryParam = {
     while (page < queryParam.endPage) {
         let pageUrlLink = `${urlLink}&page=${page}`
         page += 1;
-        
+
         let options: RequestInit = {};
         let proxy = getHttpsProxy();
         if (proxy) {
             options.agent = getHttpsProxy();
         }
-        
+
         await fetch(pageUrlLink, options).then(res => {
             let result = new ResultResp(CustomEvent.CLIENT_ERR, pageUrlLink,
                 res.status, threadId);
@@ -60,17 +61,15 @@ export async function whSearchListDefault(endpoint: string, queryParam = {
             parentPort?.postMessage(result);
             return res.json();
         }).then(res => {
-            let imgs: ImageCreateInput[] = [
-            
-            ];
-            
-            
+            let imgs: typeof ImageCreateInput[] = [];
+
+
             // put into db
             let pmsClient = getDbClient();
         }).catch(e => {
             logger4js.warn("http request error for url:%s", pageUrlLink, e);
         });
-        
+
         await delay(randomInt(3000, 6000));
     }
 }
