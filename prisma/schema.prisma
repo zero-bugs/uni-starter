@@ -1,8 +1,8 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  output        = "../node_modules/@prisma/client"
+  binaryTargets = ["native"]
+  engineType    = "library"
 }
 
 datasource db {
@@ -10,58 +10,54 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// basic attribute, not always changed.
 model Image {
-  imgId String  @unique
-  fileType String
-  fileSize Int
-  dimensionX Int
-  dimensionY Int
-  purity String
-  category String
-  path String
-  url String
-  source String
-  colors String
-  desc String
+  imgId       String    @unique
+  fileType    String
+  fileSize    Int
+  dimensionX  Int
+  dimensionY  Int
+  purity      String
+  category    String
+  path        String
+  url         String
+  source      String
+  colors      String
+  desc        String
   createdTime DateTime
-  createAt DateTime  @default(now())
-  updateAt DateTime
-  imageExt ImageExt?
+  createAt    DateTime  @default(now())
+  updateAt    DateTime
+  imageExt    ImageExt?
 }
 
-// basic attribute, always changed.
 model ImageExt {
-  image Image @relation(fields:[imgId], references:[imgId], onUpdate: Cascade, onDelete: Cascade)
-  imgId String @unique
-  views Int
+  imgId     String   @unique
+  views     Int
   favorites Int
-  ratio Decimal
-  createAt DateTime
-  updateAt DateTime
-  author Author?
-  tag Tag[]
+  ratio     Decimal
+  createAt  DateTime
+  updateAt  DateTime
+  image     Image    @relation(fields: [imgId], references: [imgId], onDelete: Cascade)
+  author    Author?
+  tag       Tag?
 }
 
-// who upload image
 model Author {
-  imageExt ImageExt @relation(fields:[name], references:[imgId], onUpdate: NoAction, onDelete: NoAction)
-  name String @unique
-  id String?
-  desc String
-  type String
+  name     String   @unique
+  id       String?
+  desc     String
+  type     String
   createAt DateTime @default(now())
   updateAt DateTime
+  imageExt ImageExt @relation(fields: [name], references: [imgId], onDelete: NoAction, onUpdate: NoAction)
 }
 
-// tag info
 model Tag {
-  imageExt ImageExt @relation(fields:[name], references:[imgId], onUpdate: NoAction, onDelete: NoAction)
-  name String @unique
-  alias String?
-  id String?
+  name       String   @unique
+  alias      String?
+  id         String?
   categoryId String
-  category String
-  createAt DateTime @default(now())
-  updateAt DateTime
+  category   String
+  createAt   DateTime @default(now())
+  updateAt   DateTime
+  imageExt   ImageExt @relation(fields: [name], references: [imgId], onDelete: NoAction, onUpdate: NoAction)
 }
