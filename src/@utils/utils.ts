@@ -1,5 +1,7 @@
 import path, {dirname, resolve} from "path";
 import {fileURLToPath} from 'url'
+import {PrismaClient} from '@prisma/client';
+import log4jsConf from 'log4js';
 
 const __filename = fileURLToPath(import.meta.url)
 export const appDirName = dirname(__filename)
@@ -26,6 +28,18 @@ export function getGlobalConfFile() {
     return `${getTemplatePath()}${path.sep}appConfig.json`;
 }
 
-import log4jsConf from 'log4js';
+export function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export function getDbClient() {
+    return new PrismaClient({
+        datasources: {
+            db: {
+                url: `file:${appRootDir}/dev.db`,
+            }
+        }
+    });
+}
 
 export const {configure, getLogger} = log4jsConf;
