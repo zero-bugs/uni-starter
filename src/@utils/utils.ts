@@ -33,13 +33,7 @@ export function delay(ms: number) {
 }
 
 export function getDbClient() {
-    return new PrismaClient({
-        datasources: {
-            db: {
-                url: `file:${appRootDir}/dev.db`,
-            }
-        }
-    });
+    return new PrismaClient();
 }
 
 export const {configure, getLogger} = log4jsConf;
