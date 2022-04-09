@@ -25,7 +25,7 @@ model Image {
   desc        String
   createdTime DateTime
   createAt    DateTime  @default(now())
-  updateAt    DateTime
+  updateAt    DateTime  @updatedAt
   imageExt    ImageExt?
 }
 
@@ -34,9 +34,9 @@ model ImageExt {
   views     Int
   favorites Int
   ratio     Decimal
-  createAt  DateTime
-  updateAt  DateTime
-  image     Image    @relation(fields: [imgId], references: [imgId], onDelete: Cascade)
+  createAt  DateTime  @default(now())
+  updateAt  DateTime  @updatedAt
+  image     Image     @relation(fields: [imgId], references: [imgId], onDelete: Cascade)
   author    Author?
   tag       Tag?
 }
@@ -46,9 +46,9 @@ model Author {
   id       String?
   desc     String
   type     String
-  createAt DateTime @default(now())
-  updateAt DateTime
-  imageExt ImageExt @relation(fields: [name], references: [imgId], onDelete: NoAction, onUpdate: NoAction)
+  createAt DateTime  @default(now())
+  updateAt DateTime  @updatedAt
+  imageExt ImageExt  @relation(fields: [name], references: [imgId], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model Tag {
@@ -57,7 +57,7 @@ model Tag {
   id         String?
   categoryId String
   category   String
-  createAt   DateTime @default(now())
-  updateAt   DateTime
-  imageExt   ImageExt @relation(fields: [name], references: [imgId], onDelete: NoAction, onUpdate: NoAction)
+  createAt   DateTime  @default(now())
+  updateAt   DateTime  @updatedAt
+  imageExt   ImageExt  @relation(fields: [name], references: [imgId], onDelete: NoAction, onUpdate: NoAction)
 }
