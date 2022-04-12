@@ -11,7 +11,7 @@ datasource db {
 }
 
 model Image {
-  imgId       String    @unique
+  imgId       String   @unique
   fileType    String
   fileSize    Int
   dimensionX  Int
@@ -23,41 +23,35 @@ model Image {
   source      String
   colors      String
   desc        String
+  views       Int
+  favorites   Int
+  ratio       String
+  author      Author?  @relation(fields: [imgId], references: [authorId])
+  tags        Tag[]
   createdTime DateTime
-  createAt    DateTime  @default(now())
-  updateAt    DateTime  @updatedAt
-  imageExt    ImageExt?
-}
-
-model ImageExt {
-  imgId     String   @unique
-  views     Int
-  favorites Int
-  ratio     Decimal
-  createAt  DateTime  @default(now())
-  updateAt  DateTime  @updatedAt
-  image     Image     @relation(fields: [imgId], references: [imgId], onDelete: Cascade)
-  author    Author?
-  tag       Tag?
+  createAt    DateTime @default(now())
+  updateAt    DateTime @updatedAt
 }
 
 model Author {
+  authorId String   @id @default(uuid())
   name     String   @unique
   id       String?
   desc     String
   type     String
-  createAt DateTime  @default(now())
-  updateAt DateTime  @updatedAt
-  imageExt ImageExt  @relation(fields: [name], references: [imgId], onDelete: NoAction, onUpdate: NoAction)
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+  image    Image[]
 }
 
 model Tag {
+  tagId      String   @id @default(uuid())
   name       String   @unique
   alias      String?
   id         String?
   categoryId String
   category   String
-  createAt   DateTime  @default(now())
-  updateAt   DateTime  @updatedAt
-  imageExt   ImageExt  @relation(fields: [name], references: [imgId], onDelete: NoAction, onUpdate: NoAction)
+  createAt   DateTime @default(now())
+  updateAt   DateTime @updatedAt
+  image      Image?   @relation(fields: [tagId], references: [imgId])
 }

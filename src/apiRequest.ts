@@ -1,9 +1,6 @@
 import fetch, {RequestInit} from 'node-fetch';
 import {parentPort, threadId} from 'worker_threads';
 
-import Image from '@prisma/client';
-import ImageExt from '@prisma/client';
-
 import CustomEvent from "./config/customEvent.js";
 
 import {delay, getDbClient, getLogger} from "./@utils/utils.js";
@@ -18,7 +15,7 @@ class ResultResp {
     url: string;
     httpCode: number;
     threadId: number;
-    
+
     constructor(type: string, url: string, status: number, threadId: number) {
         this.type = type;
         this.url = url;
@@ -44,13 +41,13 @@ export async function whSearchListDefault(endpoint: string, queryParam = {
     while (page < queryParam.endPage) {
         let pageUrlLink = `${urlLink}&page=${page}`
         page += 1;
-        
+
         let options: RequestInit = {};
         let proxy = getHttpsProxy();
         if (proxy) {
             options.agent = getHttpsProxy();
         }
-        
+
         let respJson: ResImgEntryPo;
         await fetch(pageUrlLink, options).then(res => {
             let result = new ResultResp(CustomEvent.CLIENT_ERR, pageUrlLink,
@@ -63,53 +60,40 @@ export async function whSearchListDefault(endpoint: string, queryParam = {
             parentPort?.postMessage(result);
             return res.json();
         }).then((res) => {
-            let images: Array<[typeof Image, typeof ImageExt]> = [];
+            let pmsClient = getDbClient();
             respJson = res as ResImgEntryPo;
-            
+
+            let imagePoList = new Array<ImgEntryPo>();
             respJson.data.forEach(entry => {
                 // po->vo
                 let respImgPo = entry as ImgEntryPo;
-                let imgVo = Object.create(Image);
-                imgVo.imgId = respImgPo.id;
-                imgVo.fileType = respImgPo.file_type;
-                imgVo.fileSize = respImgPo.file_size;
-                imgVo.dimensionX = respImgPo.dimension_x;
-                imgVo.dimensionY = respImgPo.dimension_y;
-                imgVo.purity = respImgPo.purity;
-                imgVo.category = respImgPo.category;
-                imgVo.path = respImgPo.path;
-                imgVo.url = respImgPo.url;
-                imgVo.source = respImgPo.source;
-                imgVo.createdTime = respImgPo.created_at;
-                
-                let imgExtVo = Object.create(ImageExt);
-                imgExtVo.imgId = respImgPo.id;
-                imgExtVo.views = respImgPo.views;
-                imgExtVo.favorites = respImgPo.favorites;
-                imgExtVo.ratio = respImgPo.ratio;
-                
-                images.push([imgVo, imgExtVo]);
+                imagePoList.push(respImgPo);
             });
-            
-            // put into db
-            let pmsClient = getDbClient();
-            images.forEach(entry => {
-                let imageEntry = entry.;
-                console.log(imgageEntry);
-                // pmsClient.image.create({
-                //     data: {
-                //         entry
-                //         imageExt: {
-                //
-                //         }
-                //     }
-                // });
+
+            imagePoList.forEach(entry => {
+                pmsClient.image.create({
+                    data: {
+                        imgId: entry.id,
+                        fileType: entry.file_type,
+                        fileSize: entry.file_size,
+                        dimensionX: entry.dimension_x,
+                        dimensionY: entry.dimension_y,
+                        purity: entry.purity,
+                        category: entry.category,
+                        path: entry.path,
+                        url: entry.url,
+                        source: entry.source,
+                        views: entry.views,
+                        favorites: entry.favorites,
+                        ratio: entry.ratio,
+                        createdTime: entry.created_at,
+                    }
+                });
             });
-            
         }).catch(e => {
             logger4js.warn("http request error for url:%s", pageUrlLink, e);
         });
-        
+
         await delay(randomInt(3000, 6000));
     }
 }
