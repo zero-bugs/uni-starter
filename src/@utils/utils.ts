@@ -32,8 +32,25 @@ export function delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export function getDbClient() {
-    return new PrismaClient();
-}
+export const pmsClient = new PrismaClient({
+    log: [
+        {
+            emit: 'stdout',
+            level: 'query',
+        },
+        {
+            emit: 'stdout',
+            level: 'error',
+        },
+        {
+            emit: 'stdout',
+            level: 'info',
+        },
+        {
+            emit: 'stdout',
+            level: 'warn',
+        },
+    ],
+});
 
 export const {configure, getLogger} = log4jsConf;

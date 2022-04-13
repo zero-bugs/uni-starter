@@ -3,7 +3,7 @@ import {parentPort, threadId} from 'worker_threads';
 
 import CustomEvent from "./config/customEvent.js";
 
-import {delay, getDbClient, getLogger} from "./@utils/utils.js";
+import {delay, getLogger, pmsClient} from "./@utils/utils.js";
 import {ImgEntryPo, ResImgEntryPo} from './@entry/ImgEntryPo.js'
 import {getHttpsProxy} from "./config/proxyConfig.js";
 import {randomInt} from "crypto";
@@ -50,17 +50,16 @@ export async function whSearchListDefault(endpoint: string, queryParam = {
 
         let respJson: ResImgEntryPo;
         await fetch(pageUrlLink, options).then(res => {
-            let result = new ResultResp(CustomEvent.CLIENT_ERR, pageUrlLink,
-                res.status, threadId);
             if (res.status !== 200 && res.status !== 201) {
-                parentPort?.postMessage(result);
+                parentPort?.postMessage(new ResultResp(CustomEvent.CLIENT_ERR, pageUrlLink,
+                    res.status, threadId));
                 logger4js.warn('worker execute failed request url:%s', endpoint)
                 throw new Error(`http error:${res.status}, ${res.body}`);
             }
-            parentPort?.postMessage(result);
+            parentPort?.postMessage(new ResultResp(CustomEvent.CLIENT_RES, pageUrlLink,
+                res.status, threadId));
             return res.json();
         }).then((res) => {
-            let pmsClient = getDbClient();
             respJson = res as ResImgEntryPo;
 
             let imagePoList = new Array<ImgEntryPo>();
@@ -70,8 +69,8 @@ export async function whSearchListDefault(endpoint: string, queryParam = {
                 imagePoList.push(respImgPo);
             });
 
-            imagePoList.forEach(entry => {
-                pmsClient.image.create({
+            imagePoList.forEach(async entry => {
+                await pmsClient.image.create({
                     data: {
                         imgId: entry.id,
                         fileType: entry.file_type,
@@ -86,7 +85,7 @@ export async function whSearchListDefault(endpoint: string, queryParam = {
                         views: entry.views,
                         favorites: entry.favorites,
                         ratio: entry.ratio,
-                        createdTime: entry.created_at,
+                        createdTime: new Date(entry.created_at),
                     }
                 });
             });

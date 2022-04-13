@@ -1,8 +1,8 @@
-import {isMainThread, parentPort, Worker, workerData} from 'worker_threads';
+import {isMainThread, parentPort, threadId, Worker, workerData} from 'worker_threads';
 import {fileURLToPath} from 'url'
 
 import {whSearchListDefault} from './apiRequest.js'
-import {configure, getLog4jsConfFile, getLogger} from "./@utils/utils.js";
+import {configure, getLog4jsConfFile, getLogger, pmsClient} from "./@utils/utils.js";
 import {ApiKeyId, getApiEndpoint} from "./config/configFile.js";
 
 const __filename = fileURLToPath(import.meta.url)
@@ -16,7 +16,7 @@ function mainThread() {
     let step = 5;
     let startIndex = 0;
     let endIndex = step;
-    
+
     for (let i = 0; i < 3; ++i) {
         startIndex = startIndex + i * step;
         endIndex = endIndex + startIndex;
@@ -29,7 +29,7 @@ function mainThread() {
                 "endPage": endIndex
             }
         });
-        
+
         worker.on('exit', code => {
             console.log(`main: worker stopped with exit code ${code}`);
         });
@@ -39,16 +39,26 @@ function mainThread() {
     }
 }
 
-function workerThead() {
+async function workerThead() {
     console.log(`worker: workerData ${JSON.stringify(workerData)}`);
-    whSearchListDefault(getApiEndpoint(ApiKeyId.WH_QUERY_01), workerData).catch(e => {
+    await whSearchListDefault(getApiEndpoint(ApiKeyId.WH_QUERY_01), workerData).catch(e => {
         logger.warn(`execute api:${ApiKeyId.WH_QUERY_01} failed`, e);
     });
-    parentPort?.postMessage('done worker...');
+    parentPort?.postMessage(`${threadId}, done worker...`);
 }
 
-if (isMainThread) {
-    mainThread();
-} else {
-    workerThead();
+async function main() {
+    if (isMainThread) {
+        mainThread();
+    } else {
+        await workerThead();
+    }
 }
+
+main()
+    .catch((e) => {
+        throw e
+    })
+    .finally(async () => {
+        await pmsClient.$disconnect();
+    })
