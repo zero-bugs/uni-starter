@@ -26,7 +26,9 @@ function mainThread() {
                 "sorting": 'date_added',
                 "order": 'desc',
                 "startPage": startIndex,
-                "endPage": endIndex
+                "endPage": endIndex,
+                "sinceBegin": new Date("2022-01-01 00:00:00"),
+                "sinceEnd": new Date(),
             }
         });
 
