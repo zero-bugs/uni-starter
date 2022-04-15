@@ -1,15 +1,15 @@
 import path, {dirname, resolve} from "path";
-import {fileURLToPath} from 'url'
-import {PrismaClient} from '@prisma/client';
-import log4jsConf from 'log4js';
+import {fileURLToPath} from "url";
+import {PrismaClient} from "@prisma/client";
+import log4jsConf from "log4js";
 
-const __filename = fileURLToPath(import.meta.url)
-export const appDirName = dirname(__filename)
-export const appRootDir = resolve(appDirName, '..')
+const __filename = fileURLToPath(import.meta.url);
+export const appDirName = dirname(__filename);
+export const appRootDir = resolve(appDirName, "..");
 
 export function getTemplatePath() {
-    console.log(`${__filename},${appDirName},${appRootDir}`)
-    return `${resolve(appRootDir, '..')}${path.sep}templates`
+    console.log(`${__filename},${appDirName},${appRootDir}`);
+    return `${resolve(appRootDir, "..")}${path.sep}templates`;
 }
 
 export function getLog4jsConfFile() {
@@ -29,26 +29,26 @@ export function getGlobalConfFile() {
 }
 
 export function delay(ms: number) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export const pmsClient = new PrismaClient({
     log: [
+        // {
+        //     emit: "stdout",
+        //     level: "query",
+        // },
         {
-            emit: 'stdout',
-            level: 'query',
+            emit: "stdout",
+            level: "error",
         },
         {
-            emit: 'stdout',
-            level: 'error',
+            emit: "stdout",
+            level: "info",
         },
         {
-            emit: 'stdout',
-            level: 'info',
-        },
-        {
-            emit: 'stdout',
-            level: 'warn',
+            emit: "stdout",
+            level: "warn",
         },
     ],
 });

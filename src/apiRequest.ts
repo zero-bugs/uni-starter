@@ -26,12 +26,50 @@ class ResultResp {
 
 type QueryParam = {
     purity: String;
+    category: string;
+    apikey: string;
     sorting: String,
     order: string,
     startPage: number,
     endPage: number,
     sinceBegin: Date, //2022-03-19 00:15:04
     sinceEnd: Date
+}
+
+/**
+ * create before check exist or not.
+ * @param entry
+ */
+async function pmsCreateWithCheckExist(entry: ImgEntryPo): Promise<boolean> {
+    const count = await pmsClient.image.count({
+        where: {
+            imgId: entry.id,
+        }
+    });
+
+    if (count !== 0) {
+        return false;
+    }
+
+    await pmsClient.image.create({
+        data: {
+            imgId: entry.id,
+            fileType: entry.file_type,
+            fileSize: entry.file_size,
+            dimensionX: entry.dimension_x,
+            dimensionY: entry.dimension_y,
+            purity: entry.purity,
+            category: entry.category,
+            path: entry.path,
+            url: entry.url,
+            source: entry.source,
+            views: entry.views,
+            favorites: entry.favorites,
+            ratio: entry.ratio,
+            createdTime: new Date(entry.created_at),
+        }
+    });
+    return true;
 }
 
 /**
@@ -48,7 +86,7 @@ export async function whSearchListDefault(endpoint: string, queryParam: QueryPar
         queryParam.sinceEnd = new Date();
     }
 
-    let urlLink = `${endpoint}?purity=${queryParam.purity}&sorting=${queryParam.sorting}&order=${queryParam.order}`
+    let urlLink = `${endpoint}?purity=${queryParam.purity}&category=${queryParam.category}&sorting=${queryParam.sorting}&order=${queryParam.order}&apikey=${queryParam.apikey}`
     while (page < queryParam.endPage) {
         let pageUrlLink = `${urlLink}&page=${page}`
         page += 1;
@@ -65,8 +103,8 @@ export async function whSearchListDefault(endpoint: string, queryParam: QueryPar
             if (res.status !== 200 && res.status !== 201) {
                 parentPort?.postMessage(new ResultResp(CustomEvent.CLIENT_ERR, pageUrlLink,
                     res.status, threadId));
-                logger4js.warn('worker execute failed request url:%s', endpoint)
-                throw new Error(`http error:${res.status}, ${res.body}`);
+                logger4js.warn('worker execute failed request url:%s', endpoint);
+                return JSON.parse("{}");
             }
             parentPort?.postMessage(new ResultResp(CustomEvent.CLIENT_RES, pageUrlLink,
                 res.status, threadId));
@@ -97,49 +135,21 @@ export async function whSearchListDefault(endpoint: string, queryParam: QueryPar
                 ++validImgCount;
             }
         })
-        if (validImgCount === 0) {
+        if (validImgCount === 0 || imagePoList.length === 0) {
             logger4js.info(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd} have handled, break...`);
             break;
         }
 
-
         // write to db
-        let totalCount = imagePoList.length;
         let writeDbCount = 0;
         for (const entry of imagePoList) {
             // check exist or not
-            const count = pmsClient.image.count({
-                where: {
-                    imgId: entry.id,
-                },
-                select: {
-                    imgId: true,
-                }
-            });
-
-            await console.log(count);
-            
-            pmsClient.image.create({
-                data: {
-                    imgId: entry.id,
-                    fileType: entry.file_type,
-                    fileSize: entry.file_size,
-                    dimensionX: entry.dimension_x,
-                    dimensionY: entry.dimension_y,
-                    purity: entry.purity,
-                    category: entry.category,
-                    path: entry.path,
-                    url: entry.url,
-                    source: entry.source,
-                    views: entry.views,
-                    favorites: entry.favorites,
-                    ratio: entry.ratio,
-                    createdTime: new Date(entry.created_at),
-                }
-            });
+            if (await pmsCreateWithCheckExist(entry)) {
+                ++writeDbCount;
+            }
         }
 
-        logger4js.info("");
+        logger4js.info(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd}, thread-id:${threadId} add ${writeDbCount}, cur ${page}`);
 
         await delay(randomInt(3000, 6000));
     }
