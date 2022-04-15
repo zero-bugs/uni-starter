@@ -16,7 +16,7 @@ function mainThread() {
     let step = 5;
     let startIndex = 0;
     let endIndex = step;
-
+    
     for (let i = 0; i < 3; ++i) {
         startIndex = startIndex + i * step;
         endIndex = endIndex + startIndex;
@@ -31,7 +31,7 @@ function mainThread() {
                 "sinceEnd": new Date(),
             }
         });
-
+        
         worker.on('exit', code => {
             console.log(`main: worker stopped with exit code ${code}`);
         });
@@ -39,6 +39,15 @@ function mainThread() {
             console.log(`main: receive message: ${JSON.stringify(msg)}`);
         });
     }
+    
+    // process listener
+    process.on('unhandledRejection', (reason, promise) => {
+        console.log(`system unhandledRejection :${reason}, msg ${promise.then(e => console.log(e))}`)
+    });
+    process.on('uncaughtException', (reason, promise) => {
+        console.log(`system uncaughtException :${reason}, msg ${promise}`)
+    });
+    
 }
 
 async function workerThead() {
