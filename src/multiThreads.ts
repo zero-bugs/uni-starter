@@ -14,7 +14,7 @@ let logger = getLogger(__filename);
 
 function mainThread() {
     let step = 1100;
-    let startIndex = -step;
+    let startIndex = -step + 200;
     let endIndex = 0;
     for (let i = 0; i < 3; ++i) {
         startIndex = startIndex + step;
@@ -70,10 +70,8 @@ async function main() {
     }
 }
 
-main()
-    .catch((e) => {
-        throw e;
-    })
-    .finally(async () => {
-        await pmsClient.$disconnect();
-    });
+main().catch(async (reason) => {
+    console.log(`main function execute failed, reason:${reason}`);
+    console.log(`warning, closing client.....`)
+    await pmsClient.$disconnect();
+});

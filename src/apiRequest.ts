@@ -1,4 +1,4 @@
-import fetch, {RequestInit} from 'node-fetch';
+import fetch, {AbortError, RequestInit} from 'node-fetch';
 import {parentPort, threadId} from 'worker_threads';
 
 import CustomEvent from "./config/customEvent.js";
@@ -9,6 +9,8 @@ import {getHttpsProxy} from "./config/proxyConfig.js";
 import {randomInt} from "crypto";
 
 let logger4js = getLogger('app')
+
+const maxRetryCount = 3;
 
 class ResultResp {
     type: string;
@@ -72,6 +74,53 @@ async function pmsCreateWithCheckExist(entry: ImgEntryPo): Promise<boolean> {
     return true;
 }
 
+async function fetchWithRetry(pageUrlLink: string, options: RequestInit, queryParam: QueryParam) {
+    let respJson: ResImgEntryPo;
+    let imagePoList = new Array<ImgEntryPo>();
+
+    let retry = 0;
+    while (retry < maxRetryCount) {
+        try {
+            const response = await fetch(pageUrlLink, options)
+
+            if (response.status !== 200 && response.status !== 201) {
+                parentPort?.postMessage(new ResultResp(CustomEvent.CLIENT_ERR, pageUrlLink,
+                    response.status, threadId));
+                logger4js.warn('worker execute failed request url:%s', pageUrlLink);
+                return imagePoList;
+            }
+
+            parentPort?.postMessage(new ResultResp(CustomEvent.CLIENT_RES, pageUrlLink,
+                response.status, threadId));
+
+            const data = await response.json();
+            respJson = data as ResImgEntryPo;
+            if (queryParam.endPage > respJson.meta.last_page) {
+                queryParam.endPage = respJson.meta.last_page;
+            }
+
+            respJson.data.forEach(entry => {
+                // po->vo
+                let respImgPo = entry as ImgEntryPo;
+                imagePoList.push(respImgPo);
+            });
+            retry = maxRetryCount;
+        } catch (error) {
+            if (error instanceof AbortError) {
+                logger4js.warn(`'worker thread-${threadId} execute AbortError with request url:${pageUrlLink}`);
+            } else {
+                logger4js.warn(`'worker thread-${threadId} execute unknown error with request url:${pageUrlLink}`);
+                console.trace();
+            }
+            logger4js.error(`error msg:${error}`);
+
+            retry += 1;
+            await delay(randomInt(3000, 6000));
+        }
+    }
+    return imagePoList;
+}
+
 /**
  * wh: default search
  * @param endpoint
@@ -97,33 +146,7 @@ export async function whSearchListDefault(endpoint: string, queryParam: QueryPar
             options.agent = getHttpsProxy();
         }
 
-        let respJson: ResImgEntryPo;
-        let imagePoList = new Array<ImgEntryPo>();
-        await fetch(pageUrlLink, options).then(res => {
-            if (res.status !== 200 && res.status !== 201) {
-                parentPort?.postMessage(new ResultResp(CustomEvent.CLIENT_ERR, pageUrlLink,
-                    res.status, threadId));
-                logger4js.warn('worker execute failed request url:%s', endpoint);
-                return JSON.parse("{}");
-            }
-            parentPort?.postMessage(new ResultResp(CustomEvent.CLIENT_RES, pageUrlLink,
-                res.status, threadId));
-            return res.json();
-        }).then((res) => {
-            respJson = res as ResImgEntryPo;
-
-            if (queryParam.endPage > respJson.meta.last_page) {
-                queryParam.endPage = respJson.meta.last_page;
-            }
-
-            respJson.data.forEach(entry => {
-                // po->vo
-                let respImgPo = entry as ImgEntryPo;
-                imagePoList.push(respImgPo);
-            });
-        }).catch(e => {
-            logger4js.warn("http request error for url:%s", pageUrlLink, e);
-        });
+        let imagePoList: Array<ImgEntryPo> = await fetchWithRetry(pageUrlLink, options, queryParam);
 
         let validImgCount = 0;
         // check date if between sinceBegin and sinceEnd.
