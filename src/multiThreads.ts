@@ -56,9 +56,12 @@ async function workerThead() {
     await whSearchListDefault(
         getApiEndpoint(ApiKeyId.WH_QUERY_01),
         workerData
-    ).catch((e) => {
+    ).then(value => {
+        console.log(`worker ${threadId} has done all tasks, res:${value}...`)
+    }).catch((e) => {
         logger.warn(`execute api:${ApiKeyId.WH_QUERY_01} failed`, e);
     });
+
     parentPort?.postMessage(`${threadId}, done worker...`);
 }
 

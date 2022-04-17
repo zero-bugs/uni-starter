@@ -86,8 +86,9 @@ async function fetchWithRetry(pageUrlLink: string, options: RequestInit, queryPa
             if (response.status !== 200 && response.status !== 201) {
                 parentPort?.postMessage(new ResultResp(CustomEvent.CLIENT_ERR, pageUrlLink,
                     response.status, threadId));
-                logger4js.warn('worker execute failed request url:%s', pageUrlLink);
-                return imagePoList;
+                logger4js.warn(`worker threadId-${threadId} execute failed request url:${pageUrlLink}`);
+                ++retry;
+                continue;
             }
 
             parentPort?.postMessage(new ResultResp(CustomEvent.CLIENT_RES, pageUrlLink,
@@ -112,9 +113,9 @@ async function fetchWithRetry(pageUrlLink: string, options: RequestInit, queryPa
                 logger4js.warn(`'worker thread-${threadId} execute unknown error with request url:${pageUrlLink}`);
                 console.trace();
             }
-            logger4js.error(`error msg:${error}`);
+            logger4js.error(`${threadId} http failed, retry:${retry}, error msg:${error}`);
 
-            retry += 1;
+            ++retry;
             await delay(randomInt(3000, 6000));
         }
     }
@@ -147,6 +148,9 @@ export async function whSearchListDefault(endpoint: string, queryParam: QueryPar
         }
 
         let imagePoList: Array<ImgEntryPo> = await fetchWithRetry(pageUrlLink, options, queryParam);
+        if (imagePoList.length === 0) {
+            continue;
+        }
 
         let validImgCount = 0;
         // check date if between sinceBegin and sinceEnd.
@@ -159,7 +163,7 @@ export async function whSearchListDefault(endpoint: string, queryParam: QueryPar
             }
         })
         if (validImgCount === 0 || imagePoList.length === 0) {
-            logger4js.info(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd} have handled, break...`);
+            logger4js.info(`threadId-${threadId}, images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd} have handled, break...`);
             break;
         }
 
@@ -172,7 +176,7 @@ export async function whSearchListDefault(endpoint: string, queryParam: QueryPar
             }
         }
 
-        logger4js.info(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd}, thread-id:${threadId} add ${writeDbCount}, cur ${page}`);
+        logger4js.info(`threadId-${threadId},images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd}, add ${writeDbCount}, cur ${page}`);
 
         await delay(randomInt(3000, 6000));
     }
