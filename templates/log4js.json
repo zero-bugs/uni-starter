@@ -1,5 +1,12 @@
 {
   "appenders": {
+    "out": {
+      "type": "stdout",
+      "layout": {
+        "type": "pattern",
+        "pattern": "%d %p %c %X{user} %m%n"
+      }
+    },
     "access": {
       "type": "dateFile",
       "filename": "log/access.log",
@@ -10,7 +17,11 @@
       "type": "file",
       "filename": "log/app.log",
       "maxLogSize": 10485760,
-      "numBackups": 3
+      "numBackups": 3,
+      "layout": {
+        "type": "pattern",
+        "pattern": "%d %p %c %x{user} %m%n"
+      }
     },
     "errorFile": {
       "type": "file",
