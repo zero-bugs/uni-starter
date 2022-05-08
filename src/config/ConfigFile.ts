@@ -1,5 +1,5 @@
 import fs from "fs";
-import {getApiListFile, getGlobalConfFile} from "../@utils/utils.js";
+import {getApiListFile, getGlobalConfFile} from "../@utils/Utils.js";
 
 export enum PicLibType {
     WH = "wh",
@@ -12,6 +12,7 @@ export enum ApiKeyId {
     WH_QUERY_02 = "WH_QUERY_02",
     WH_QUERY_03 = "WH_QUERY_03",
     WH_QUERY_04 = "WH_QUERY_04",
+    API_ID_DEF = "API_DEFAULT"
 }
 
 export const apiListConf = JSON.parse(
