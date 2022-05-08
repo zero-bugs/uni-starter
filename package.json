@@ -2,7 +2,7 @@
   "name": "script",
   "license": "MIT",
   "scripts": {
-    "dev": "ts-node --trace-warnings --loader ts-node/esm src/multiThreads.ts",
+    "dev": "ts-node --trace-warnings --loader ts-node/esm src/Main.ts",
     "start": "concurrently \"npm run watch\" \"npm run serve\"",
     "start:dev": "nodemon",
     "serve": "nodemon -w dist/index.js",
