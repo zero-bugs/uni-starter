@@ -1,13 +1,13 @@
 import fs from "fs";
 import httpsAgent from "https-proxy-agent";
-import {getProxyConfFile} from "../@utils/utils.js";
+import {getProxyConfFile} from "../@utils/Utils.js";
 
 class ProxyConfig {
     proxySwitch: boolean = false;
     http_proxy: string;
     https_proxy: string;
     no_proxy: string;
-
+    
     constructor() {
         let filePath = getProxyConfFile();
         let proxyJson = JSON.parse(fs.readFileSync(filePath, "utf-8"));
