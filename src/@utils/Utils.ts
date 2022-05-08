@@ -1,7 +1,6 @@
 import path, {dirname, resolve} from "path";
 import {fileURLToPath} from "url";
 import {PrismaClient} from "@prisma/client";
-import log4jsConf from "log4js";
 
 const __filename = fileURLToPath(import.meta.url);
 export const appDirName = dirname(__filename);
@@ -10,10 +9,6 @@ export const appRootDir = resolve(appDirName, "..");
 export function getTemplatePath() {
     console.log(`${__filename},${appDirName},${appRootDir}`);
     return `${resolve(appRootDir, "..")}${path.sep}templates`;
-}
-
-export function getLog4jsConfFile() {
-    return `${getTemplatePath()}${path.sep}log4js.json`;
 }
 
 export function getApiListFile() {
@@ -53,4 +48,3 @@ export const pmsClient = new PrismaClient({
     ],
 });
 
-export const {configure, getLogger} = log4jsConf;
