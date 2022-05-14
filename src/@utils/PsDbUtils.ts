@@ -11,11 +11,11 @@ export async function pmsCreateWithCheckExist(entry: ImgEntryPo): Promise<boolea
             imgId: entry.id,
         }
     });
-    
+
     if (count !== 0) {
         return false;
     }
-    
+
     await pmsClient.image.create({
         data: {
             imgId: entry.id,

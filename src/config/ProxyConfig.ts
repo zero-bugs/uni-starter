@@ -7,7 +7,7 @@ class ProxyConfig {
     http_proxy: string;
     https_proxy: string;
     no_proxy: string;
-    
+
     constructor() {
         let filePath = getProxyConfFile();
         let proxyJson = JSON.parse(fs.readFileSync(filePath, "utf-8"));

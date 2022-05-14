@@ -8,15 +8,18 @@ import {delay} from "../@utils/Utils.js";
 
 import {fetchWithRetry} from "../@utils/HttpUtils.js";
 import {pmsCreateWithCheckExist} from "../@utils/PsDbUtils.js";
+import {getApiEndpoint} from "../config/ConfigFile.js";
+import {parentPort, threadId} from "worker_threads";
 
-const logger4js = getLog4js('WhApiHandler');
+const logger4js = getLog4js('app');
 
 /**
  * wh: default search
- * @param endpoint
+ * @param queryParam 查询参数
+ * @param apiId apiId
  * @param queryParam
  */
-export async function whSearchListDefault(endpoint: string, queryParam: QueryParam) {
+export async function whSearchListDefault(queryParam: QueryParam, apiId: string) {
     let page = queryParam.startPage === 0 ? 1 : queryParam.startPage;
     if (queryParam.sinceBegin == null) {
         queryParam.sinceBegin = new Date("1970-01-01 00:00:00");
@@ -24,23 +27,24 @@ export async function whSearchListDefault(endpoint: string, queryParam: QueryPar
     if (queryParam.sinceEnd == null) {
         queryParam.sinceEnd = new Date();
     }
-    
+
+    let endpoint = getApiEndpoint(apiId);
     let urlLink = `${endpoint}?purity=${queryParam.purity}&category=${queryParam.category}&sorting=${queryParam.sorting}&order=${queryParam.order}&apikey=${queryParam.apikey}`
     while (page < queryParam.endPage) {
         let pageUrlLink = `${urlLink}&page=${page}`
         page += 1;
-        
+
         let options: RequestInit = {};
         let proxy = getHttpsProxy();
         if (proxy) {
             options.agent = getHttpsProxy();
         }
-        
+
         let imagePoList: Array<ImgEntryPo> = await fetchWithRetry(pageUrlLink, options, queryParam);
         if (imagePoList.length === 0) {
             continue;
         }
-        
+
         let validImgCount = 0;
         // check date if between sinceBegin and sinceEnd.
         let imgDate: Date;
@@ -55,7 +59,7 @@ export async function whSearchListDefault(endpoint: string, queryParam: QueryPar
             logger4js.info(formatMsg(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd} have handled, break...`));
             break;
         }
-        
+
         // write to db
         let writeDbCount = 0;
         for (const entry of imagePoList) {
@@ -64,11 +68,13 @@ export async function whSearchListDefault(endpoint: string, queryParam: QueryPar
                 ++writeDbCount;
             }
         }
-        
+
+        parentPort?.postMessage(`threadId-${threadId}, url:${pageUrlLink} success`);
+
         logger4js.info(formatMsg(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd}, add ${writeDbCount}, cur ${page}`));
-        
+
         await delay(randomInt(3000, 6000));
     }
-    
+
     process.exit(0);
 }

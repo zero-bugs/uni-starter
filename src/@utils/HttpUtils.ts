@@ -3,39 +3,32 @@ import {randomInt} from "crypto";
 import {parentPort, threadId} from "worker_threads";
 
 import {ImgEntryPo, ResImgEntryPo} from "../@entry/ImgEntryPo.js";
-import CustomEvent from "../config/CustomEvent.js";
 import {delay} from "./Utils.js";
 import {formatMsg, getLog4js} from "../@log/Log4js.js";
 
 const maxRetryCount = 3;
-const logger4js = getLog4js('HttpUtils');
+const logger4js = getLog4js('http');
 
 export async function fetchWithRetry(pageUrlLink: string, options: RequestInit, queryParam: QueryParam) {
     let respJson: ResImgEntryPo;
     let imagePoList = new Array<ImgEntryPo>();
-    
+
     let retry = 0;
     while (retry < maxRetryCount) {
         try {
             const response = await fetch(pageUrlLink, options)
-            
             if (response.status !== 200 && response.status !== 201) {
-                parentPort?.postMessage(new ResultResp(CustomEvent.CLIENT_ERR, pageUrlLink,
-                    response.status, threadId));
                 logger4js.warn(formatMsg(`worker execute failed request url:${pageUrlLink}`));
                 ++retry;
                 continue;
             }
-            
-            parentPort?.postMessage(new ResultResp(CustomEvent.CLIENT_RES, pageUrlLink,
-                response.status, threadId));
-            
+
             const data = await response.json();
             respJson = data as ResImgEntryPo;
             if (queryParam.endPage > respJson.meta.last_page) {
                 queryParam.endPage = respJson.meta.last_page;
             }
-            
+
             respJson.data.forEach(entry => {
                 // po->vo
                 let respImgPo = entry as ImgEntryPo;
@@ -43,6 +36,7 @@ export async function fetchWithRetry(pageUrlLink: string, options: RequestInit, 
             });
             retry = maxRetryCount;
         } catch (error) {
+            parentPort?.postMessage(`threadId-${threadId}, url:${pageUrlLink} failed. msg:${error}`);
             if (error instanceof AbortError) {
                 logger4js.warn(formatMsg(`worker execute AbortError with request url:${pageUrlLink}`));
             } else {
@@ -50,7 +44,7 @@ export async function fetchWithRetry(pageUrlLink: string, options: RequestInit, 
                 console.trace();
             }
             logger4js.error(formatMsg(`http failed, retry:${retry}, error msg:${error}`));
-            
+
             ++retry;
             await delay(randomInt(3000, 6000));
         }

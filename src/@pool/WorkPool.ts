@@ -5,14 +5,18 @@ import {Worker} from 'worker_threads';
 import {fileURLToPath} from "url";
 
 import {kWorkerFreedEvent} from "./EventList.js";
+import {appendLogSyncAppLog, appendLogSyncErrLog} from "../@log/Log4js.js";
+// import {getLog4js} from "../@log/Log4js.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const appDirName = dirname(__filename);
 
+// const logger4js = getLog4js('app');
+
 export class WorkerTaskInfo extends AsyncResource {
     apiId: string;
     data: any;
-    
+
     constructor(apiId: string, data: any) {
         super(String(kWorkerFreedEvent));
         this.apiId = apiId;
@@ -26,7 +30,7 @@ export class WorkerPool extends EventEmitter {
     workingList: Array<Worker> = [];
     freeList: Array<Worker> = [];
     tasks: Array<WorkerTaskInfo> = [];
-    
+
     constructor(poolSize: number, maxQueueLen: number) {
         super();
         this.poolSize = poolSize;
@@ -34,24 +38,30 @@ export class WorkerPool extends EventEmitter {
         for (let i = 0; i < poolSize; i++) {
             this.addNewWorker();
         }
-        
+
         // 每当发出 kWorkerFreedEvent 时，调度队列中待处理的下一个任务（如果有）
         this.on(kWorkerFreedEvent, () => {
             const taskInfo = this.tasks.shift();
             this.runTask(taskInfo);
         });
     }
-    
+
     addNewWorker() {
         const worker = new Worker(path.resolve(appDirName, '../../dist/@pool/TaskProcessor.js'));
         worker.on('message', (result) => {
-            console.log(`work pool result:${result}`);
+            let msg = `work pool result:${result}`
+            console.log(msg);
+            // logger4js.info(`work pool result:${result}`);
+            appendLogSyncAppLog(msg);
             this.freeList.push(worker);
             this.workingList.splice(this.workingList.indexOf(worker), 1);
             this.emit(kWorkerFreedEvent);
         });
         worker.on('error', (err) => {
-            console.log(`work pool result:${JSON.stringify(err)}`);
+            let errMsg = `work pool result:${JSON.stringify(err)}`;
+            console.log(errMsg);
+            // logger4js.error(`work pool result:${JSON.stringify(err)}`);
+            appendLogSyncErrLog(errMsg);
             this.emit('error', err);
             // 从列表中删除 Worker 并启动一个新的 Worker 来替换当前的 Worker。
             this.workingList.splice(this.workingList.indexOf(worker), 1);
@@ -60,7 +70,7 @@ export class WorkerPool extends EventEmitter {
         this.freeList.push(worker);
         this.emit(kWorkerFreedEvent);
     }
-    
+
     runTask(task: WorkerTaskInfo | undefined): boolean {
         if (!task) {
             console.log("no task have been added.");
@@ -71,7 +81,7 @@ export class WorkerPool extends EventEmitter {
             this.tasks.push(task);
             return false;
         }
-        
+
         const worker = this.freeList.pop();
         if (worker) {
             this.workingList.push(worker);
@@ -79,7 +89,7 @@ export class WorkerPool extends EventEmitter {
         worker?.postMessage(task);
         return true;
     }
-    
+
     close() {
         for (const worker of this.workingList) worker.terminate();
     }

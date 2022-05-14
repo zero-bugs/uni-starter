@@ -12,7 +12,7 @@ export async function main() {
         startIndex = startIndex + step;
         endIndex = endIndex + step;
         pool.runTask(new WorkerTaskInfo(ApiKeyId.WH_QUERY_01, {
-            purity: '011',
+            purity: '001',
             category: '111',
             apikey: `${getApiKey()}`,
             sorting: "date_added",
