@@ -4,10 +4,9 @@ import {parentPort, threadId} from "worker_threads";
 
 import {ImgEntryPo, ResImgEntryPo} from "../@entry/ImgEntryPo.js";
 import {delay} from "./Utils.js";
-import {formatMsg, getLog4js} from "../@log/Log4js.js";
+import {appendLogSyncAppLog, formatMsg} from "../@log/Log4js.js";
 
 const maxRetryCount = 3;
-const logger4js = getLog4js('http');
 
 export async function fetchWithRetry(pageUrlLink: string, options: RequestInit, queryParam: QueryParam) {
     let respJson: ResImgEntryPo;
@@ -15,10 +14,16 @@ export async function fetchWithRetry(pageUrlLink: string, options: RequestInit, 
 
     let retry = 0;
     while (retry < maxRetryCount) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => {
+            controller.abort();
+        }, 30000);
+        options.signal = controller.signal;
+
         try {
             const response = await fetch(pageUrlLink, options)
             if (response.status !== 200 && response.status !== 201) {
-                logger4js.warn(formatMsg(`worker execute failed request url:${pageUrlLink}`));
+                appendLogSyncAppLog(formatMsg(`worker execute failed request url:${pageUrlLink}, response:${response.status}, ${await response.text()}`));
                 ++retry;
                 continue;
             }
@@ -38,15 +43,17 @@ export async function fetchWithRetry(pageUrlLink: string, options: RequestInit, 
         } catch (error) {
             parentPort?.postMessage(`threadId-${threadId}, url:${pageUrlLink} failed. msg:${error}`);
             if (error instanceof AbortError) {
-                logger4js.warn(formatMsg(`worker execute AbortError with request url:${pageUrlLink}`));
+                appendLogSyncAppLog(formatMsg(`worker execute AbortError with request url:${pageUrlLink}`));
             } else {
-                logger4js.warn(formatMsg(`worker execute unknown error with request url:${pageUrlLink}`));
+                appendLogSyncAppLog(formatMsg(`worker execute unknown error with request url:${pageUrlLink}`));
                 console.trace();
             }
-            logger4js.error(formatMsg(`http failed, retry:${retry}, error msg:${error}`));
+            appendLogSyncAppLog(formatMsg(`http failed, retry:${retry}, error msg:${error}`));
 
             ++retry;
             await delay(randomInt(3000, 6000));
+        } finally {
+            clearTimeout(timeout);
         }
     }
     return imagePoList;

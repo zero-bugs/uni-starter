@@ -3,7 +3,7 @@ import {randomInt} from "crypto";
 
 import {getHttpsProxy} from "../config/ProxyConfig.js";
 import {ImgEntryPo} from "../@entry/ImgEntryPo.js";
-import {formatMsg, getLog4js} from "../@log/Log4js.js";
+import {appendLogSyncAppLog, formatMsg} from "../@log/Log4js.js";
 import {delay} from "../@utils/Utils.js";
 
 import {fetchWithRetry} from "../@utils/HttpUtils.js";
@@ -11,7 +11,6 @@ import {pmsCreateWithCheckExist} from "../@utils/PsDbUtils.js";
 import {getApiEndpoint} from "../config/ConfigFile.js";
 import {parentPort, threadId} from "worker_threads";
 
-const logger4js = getLog4js('app');
 
 /**
  * wh: default search
@@ -30,12 +29,12 @@ export async function whSearchListDefault(queryParam: QueryParam, apiId: string)
 
     let endpoint = getApiEndpoint(apiId);
     let urlLink = `${endpoint}?purity=${queryParam.purity}&category=${queryParam.category}&sorting=${queryParam.sorting}&order=${queryParam.order}&apikey=${queryParam.apikey}`
+    let proxy = getHttpsProxy();
     while (page < queryParam.endPage) {
         let pageUrlLink = `${urlLink}&page=${page}`
         page += 1;
 
         let options: RequestInit = {};
-        let proxy = getHttpsProxy();
         if (proxy) {
             options.agent = getHttpsProxy();
         }
@@ -56,8 +55,8 @@ export async function whSearchListDefault(queryParam: QueryParam, apiId: string)
             }
         })
         if (validImgCount === 0 || imagePoList.length === 0) {
-            logger4js.info(formatMsg(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd} have handled, break...`));
-            break;
+            appendLogSyncAppLog(formatMsg(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd} have handled, break...`));
+            continue;
         }
 
         // write to db
@@ -71,7 +70,7 @@ export async function whSearchListDefault(queryParam: QueryParam, apiId: string)
 
         parentPort?.postMessage(`threadId-${threadId}, url:${pageUrlLink} success`);
 
-        logger4js.info(formatMsg(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd}, add ${writeDbCount}, cur ${page}`));
+        appendLogSyncAppLog(formatMsg(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd}, add ${writeDbCount}, cur ${page}`));
 
         await delay(randomInt(3000, 6000));
     }

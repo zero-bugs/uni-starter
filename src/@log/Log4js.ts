@@ -1,16 +1,15 @@
-import path, {dirname} from "path";
+import path from "path";
 import pkg from 'log4js';
 import {threadId} from "worker_threads";
 
 import {getTemplatePath} from "../@utils/Utils.js";
 import fs from "fs";
-import {fileURLToPath} from "url";
 import * as os from "os";
 
 const {configure, getLogger} = pkg;
 
-const __filename = fileURLToPath(import.meta.url);
-const appDirName = dirname(__filename);
+const appLog = 'D:\\code\\uni-starter\\src\\log\\app.log';
+const errLog = 'D:\\code\\uni-starter\\src\\log\\errors.log';
 
 export function intLog4j() {
     configure(getLog4jsConfFile());
@@ -29,7 +28,7 @@ function getLog4jsConfFile() {
 }
 
 export function appendLogSyncAppLog(msg: string) {
-    fs.appendFile(`${appDirName}/../log/app.log`, `${msg}${os.EOL}`, err => {
+    fs.appendFile(appLog, `${msg}${os.EOL}`, err => {
         if (err) {
             console.error(err)
             return
@@ -38,7 +37,7 @@ export function appendLogSyncAppLog(msg: string) {
 }
 
 export function appendLogSyncErrLog(msg: string) {
-    fs.appendFile(`${appDirName}/../log/errors.log`, `${msg}${os.EOL}`, err => {
+    fs.appendFile(errLog, `${msg}${os.EOL}`, err => {
         if (err) {
             console.error(err)
             return
