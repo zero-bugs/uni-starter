@@ -30,7 +30,7 @@ export async function whSearchListDefault(queryParam: QueryParam, apiId: string)
     let endpoint = getApiEndpoint(apiId);
     let urlLink = `${endpoint}?purity=${queryParam.purity}&category=${queryParam.category}&sorting=${queryParam.sorting}&order=${queryParam.order}&apikey=${queryParam.apikey}`
     let proxy = getHttpsProxy();
-    while (page < queryParam.endPage) {
+    while (page <= queryParam.endPage) {
         let pageUrlLink = `${urlLink}&page=${page}`
         page += 1;
 
