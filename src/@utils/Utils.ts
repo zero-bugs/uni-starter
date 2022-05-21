@@ -29,22 +29,18 @@ export function delay(ms: number) {
 
 export const pmsClient = new PrismaClient({
     log: [
-        // {
-        //     emit: "stdout",
-        //     level: "query",
-        // },
-        {
-            emit: "stdout",
-            level: "error",
-        },
-        {
-            emit: "stdout",
-            level: "info",
-        },
-        {
-            emit: "stdout",
-            level: "warn",
-        },
+        {level: 'warn', emit: 'event'},
+        {level: 'info', emit: 'event'},
+        {level: 'error', emit: 'event'},
     ],
 });
+pmsClient.$on('warn', (e) => {
+    console.log(e);
+})
+pmsClient.$on('info', (e) => {
+    console.log(e);
+})
+pmsClient.$on('error', (e) => {
+    console.log(e);
+})
 

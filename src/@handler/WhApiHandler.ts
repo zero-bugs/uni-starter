@@ -1,7 +1,6 @@
 import {RequestInit} from "node-fetch";
 import {randomInt} from "crypto";
 
-import {getHttpsProxy} from "../config/ProxyConfig.js";
 import {ImgEntryPo} from "../@entry/ImgEntryPo.js";
 import {appendLogSyncAppLog, formatMsg} from "../@log/Log4js.js";
 import {delay} from "../@utils/Utils.js";
@@ -29,17 +28,12 @@ export async function whSearchListDefault(queryParam: QueryParam, apiId: string)
 
     let endpoint = getApiEndpoint(apiId);
     let urlLink = `${endpoint}?purity=${queryParam.purity}&category=${queryParam.category}&sorting=${queryParam.sorting}&order=${queryParam.order}&apikey=${queryParam.apikey}`
-    let proxy = getHttpsProxy();
     while (page <= queryParam.endPage) {
         let pageUrlLink = `${urlLink}&page=${page}`
         page += 1;
 
         let options: RequestInit = {};
-        if (proxy) {
-            options.agent = getHttpsProxy();
-        }
-
-        let imagePoList: Array<ImgEntryPo> = await fetchWithRetry(pageUrlLink, options, queryParam);
+        let imagePoList: Array<ImgEntryPo> = await fetchWithRetry(options, pageUrlLink, queryParam);
         if (imagePoList.length === 0) {
             continue;
         }

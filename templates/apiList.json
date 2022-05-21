@@ -43,8 +43,5 @@
         }
       ]
     }
-  },
-  "global": {
-    "picOutputPath": "D:\\temp"
   }
 }

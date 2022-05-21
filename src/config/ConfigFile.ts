@@ -7,12 +7,13 @@ export enum PicLibType {
     YD = "yd",
 }
 
-export enum ApiKeyId {
+export enum TaskKeyId {
     WH_QUERY_01 = "WH_QUERY_01",
     WH_QUERY_02 = "WH_QUERY_02",
     WH_QUERY_03 = "WH_QUERY_03",
     WH_QUERY_04 = "WH_QUERY_04",
-    API_ID_DEF = "API_DEFAULT"
+    CM_DOWNLOAD_01 = "CM_DOWNLOAD_01",
+    TASK_ID_DEF = "ID_DEFAULT"
 }
 
 export const apiListConf = JSON.parse(
@@ -41,4 +42,12 @@ export function getApiEndpoint(apiId: string): string {
 
 export function getApiKey(): string {
     return globalConfig["apikey"];
+}
+
+export function getFetchType() {
+    return globalConfig["type"];
+}
+
+export function getPicOutputPath() {
+    return globalConfig['picOutputPath'];
 }

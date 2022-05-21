@@ -28,7 +28,7 @@ function getLog4jsConfFile() {
 }
 
 export function appendLogSyncAppLog(msg: string) {
-    fs.appendFile(appLog, `${msg}${os.EOL}`, err => {
+    fs.appendFile(appLog, `[${new Date()}]${msg}${os.EOL}`, err => {
         if (err) {
             console.error(err)
             return
