@@ -36,7 +36,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
     await fetchImgWithRetry(options, {
         category: image.category,
         purity: image.purity,
-        id: String(image.id),
+        id: String(image.imgId),
         rootPath: `${getPicOutputPath()}/${getFetchType()}`,
         url: image.path,
         extName: getExtName(image.fileType),
@@ -86,7 +86,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
             await fetchImgWithRetry(options, {
                 category: img.category,
                 purity: img.purity,
-                id: String(img.id),
+                id: String(img.imgId),
                 rootPath: `${getPicOutputPath()}/${getFetchType()}`,
                 url: img.path,
                 extName: getExtName(img.fileType),
