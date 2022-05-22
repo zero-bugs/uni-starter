@@ -36,7 +36,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
     await fetchImgWithRetry(options, {
         category: image.category,
         purity: image.purity,
-        id: String(image.imgId),
+        imgId: String(image.imgId),
         rootPath: `${getPicOutputPath()}/${getFetchType()}`,
         url: image.path,
         extName: getExtName(image.fileType),
@@ -72,6 +72,11 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
                 createdTime: 'desc'
             }
         });
+
+        if (images.length === 0) {
+            break;
+        }
+
         cursor = images[images?.length - 1].id;
         start = start + limit;
 
@@ -86,7 +91,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
             await fetchImgWithRetry(options, {
                 category: img.category,
                 purity: img.purity,
-                id: String(img.imgId),
+                imgId: String(img.imgId),
                 rootPath: `${getPicOutputPath()}/${getFetchType()}`,
                 url: img.path,
                 extName: getExtName(img.fileType),

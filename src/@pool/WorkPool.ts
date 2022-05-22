@@ -50,8 +50,6 @@ export class WorkerPool extends EventEmitter {
         const worker = new Worker(path.resolve(appDirName, '../../dist/@pool/TaskProcessor.js'));
         worker.on('message', (result) => {
             let msg = `work pool result:${result}`
-            console.log(msg);
-            // logger4js.info(`work pool result:${result}`);
             appendLogSyncAppLog(msg);
             this.freeList.push(worker);
             this.workingList.splice(this.workingList.indexOf(worker), 1);
@@ -60,7 +58,6 @@ export class WorkerPool extends EventEmitter {
         worker.on('error', (err) => {
             let errMsg = `work pool result:${JSON.stringify(err)}`;
             console.log(errMsg);
-            // logger4js.error(`work pool result:${JSON.stringify(err)}`);
             appendLogSyncErrLog(errMsg);
             this.emit('error', err);
             // 从列表中删除 Worker 并启动一个新的 Worker 来替换当前的 Worker。

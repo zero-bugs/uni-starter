@@ -77,6 +77,11 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
         fs.mkdirSync(dldPath, {recursive: true});
     }
 
+    let imgName = `${dldPath}/${param.imgId}.${param.extName}`;
+    if (fs.existsSync(imgName)) {
+        return;
+    }
+
     let retry = 0;
     while (retry < maxRetryCount) {
         const controller = new AbortController();
@@ -85,9 +90,8 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
         }, 300000);
         options.signal = controller.signal;
 
-
         try {
-            appendLogSyncAppLog(formatMsg(`begin to download img:${param.id}.${param.extName}, url:${param.url}`));
+            appendLogSyncAppLog(formatMsg(`begin to download img:${param.imgId}.${param.extName}, url:${param.url}`));
             const response = await fetch(param.url, options);
             if (response.status !== 200 && response.status !== 201) {
                 appendLogSyncAppLog(formatMsg(`worker execute download failed url:${param.url}, response:${response.status}, ${await response.text()}`));
@@ -95,14 +99,16 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
                 continue;
             }
 
-            appendLogSyncAppLog(formatMsg(`begin to write img:${param.id}.${param.extName}`));
+            appendLogSyncAppLog(formatMsg(`begin to write img:${param.imgId}.${param.extName}`));
             // await response.body?.pipe(await fs.createWriteStream(`${dldPath}/${param.id}.${param.extName}`));
             const arrayBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             // fs.createWriteStream(`${dldPath}/${param.id}.${param.extName}`).write(buffer);
 
-            fs.writeFile(`${dldPath}/${param.id}.${param.extName}`, buffer, () =>
-                console.log(`finished downloading, ${dldPath}/${param.id}.${param.extName}`));
+            fs.writeFile(imgName, buffer, () => {
+                parentPort?.postMessage(`img download failed. ${JSON.stringify(param)}`)
+                console.log(`finished downloading, ${imgName}`);
+            });
 
             retry = maxRetryCount;
         } catch (error) {

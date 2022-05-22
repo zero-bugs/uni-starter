@@ -12,7 +12,7 @@ type DownloadEntryPo = {
 type DownloadParams = {
     category: string;
     purity: string;
-    id: string;
+    imgId: string;
     rootPath: string;
     url: string;
     extName: string;
