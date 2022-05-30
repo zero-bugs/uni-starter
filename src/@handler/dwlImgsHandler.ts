@@ -13,8 +13,14 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
         dwlEntryPo.sinceEnd = new Date();
     }
 
+    if (dwlEntryPo.start <= 1) {
+        dwlEntryPo.start = 1;
+    }
+
     // 找到第一幅图片
     const image = await pmsClient.image.findFirst({
+        skip: dwlEntryPo.start - 1,
+        take: 1,
         where: {
             AND: [
                 {
@@ -73,7 +79,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
             }
         });
 
-        if (images.length === 0) {
+        if (images === null || images == undefined || images.length === 0) {
             break;
         }
 
