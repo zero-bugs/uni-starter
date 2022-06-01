@@ -8,11 +8,12 @@ export enum PicLibType {
 }
 
 export enum TaskKeyId {
-    WH_QUERY_01 = "WH_QUERY_01",
+    WH_QUERY_ALL_01 = "WH_QUERY_ALL_01",
     WH_QUERY_02 = "WH_QUERY_02",
     WH_QUERY_03 = "WH_QUERY_03",
     WH_QUERY_04 = "WH_QUERY_04",
-    CM_DOWNLOAD_01 = "CM_DOWNLOAD_01",
+    WH_DOWNLOAD_ALL_01 = "WH_DOWNLOAD_ALL_01",
+    WH_DOWNLOAD_ONE_01 = 'WH_DOWNLOAD_ONE_01',
     TASK_ID_DEF = "ID_DEFAULT"
 }
 

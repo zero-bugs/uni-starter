@@ -30,6 +30,7 @@ model Image {
   author      Author?  @relation(fields: [authorId], references: [id])
   authorId    Int?
   tags        Tag[]
+  isUsed      Int?
   createdTime DateTime
   createAt    DateTime @default(now())
   updateAt    DateTime @updatedAt

@@ -1,47 +1,57 @@
-import path from "path";
-import pkg from 'log4js';
 import {threadId} from "worker_threads";
-
-import {getTemplatePath} from "../@utils/Utils.js";
 import fs from "fs";
 import * as os from "os";
 
-const {configure, getLogger} = pkg;
-
-const appLog = 'D:\\code\\uni-starter\\src\\log\\app.log';
-const errLog = 'D:\\code\\uni-starter\\src\\log\\errors.log';
-
-export function intLog4j() {
-    configure(getLog4jsConfFile());
-}
-
-export function getLog4js(name: string) {
-    return getLogger(name);
-}
+const logPath = 'D:\\code\\uni-starter\\src\\log'
+const defLog = `${logPath}\\app.log`;
+const infoLog = `${logPath}\\info.log`;
+const errLog = `${logPath}\\errors.log`;
 
 export function formatMsg(msg: string | unknown) {
     return `[TID-${threadId}][${msg}]`;
 }
 
-function getLog4jsConfFile() {
-    return `${getTemplatePath()}${path.sep}log4js.json`;
+export enum LogLevel {
+    CONSOLE,
+    DEBUG,
+    INFO,
+    ERROR,
 }
 
-export function appendLogSyncAppLog(msg: string) {
-    fs.appendFile(appLog, `[${new Date()}]${msg}${os.EOL}`, err => {
-        if (err) {
-            console.error(err)
-            return
-        }
-    });
+export function logInit() {
+    if (!fs.existsSync(logPath)) {
+        fs.mkdirSync(logPath, {recursive: true});
+    }
 }
 
-export function appendLogSyncErrLog(msg: string) {
-    fs.appendFile(errLog, `${msg}${os.EOL}`, err => {
-        if (err) {
-            console.error(err)
-            return
-        }
-    });
+export function printLogSync(level: LogLevel = LogLevel.INFO, msg: any) {
+    switch (level) {
+        case LogLevel.CONSOLE:
+            console.log(msg);
+            break;
+        case LogLevel.INFO:
+            fs.appendFile(infoLog, `[${new Date()}]${msg}${os.EOL}`, err => {
+                if (err) {
+                    console.error(err)
+                    return
+                }
+            });
+            break
+        case LogLevel.ERROR:
+            fs.appendFile(errLog, `${msg}${os.EOL}`, err => {
+                if (err) {
+                    console.error(err)
+                    return
+                }
+            });
+            break;
+        default:
+            fs.appendFile(defLog, `[${new Date()}]${msg}${os.EOL}`, err => {
+                if (err) {
+                    console.error(err)
+                    return
+                }
+            });
+    }
 }
 

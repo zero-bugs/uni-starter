@@ -2,13 +2,14 @@ import {RequestInit} from "node-fetch";
 import {randomInt} from "crypto";
 
 import {ImgEntryPo} from "../@entry/ImgEntryPo.js";
-import {appendLogSyncAppLog, formatMsg} from "../@log/Log4js.js";
+import {printLogSync, formatMsg} from "../@log/Log4js.js";
 import {delay} from "../@utils/Utils.js";
 
 import {fetchWithRetry} from "../@utils/HttpUtils.js";
 import {pmsCreateWithCheckExist} from "../@utils/PsDbUtils.js";
 import {getApiEndpoint} from "../config/ConfigFile.js";
 import {parentPort, threadId} from "worker_threads";
+import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
 
 
 /**
@@ -49,7 +50,7 @@ export async function whSearchListDefault(queryParam: QueryParam, apiId: string)
             }
         })
         if (validImgCount === 0 || imagePoList.length === 0) {
-            appendLogSyncAppLog(formatMsg(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd} have handled, break...`));
+            printLogSync(0, formatMsg(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd} have handled, break...`));
             continue;
         }
 
@@ -62,11 +63,11 @@ export async function whSearchListDefault(queryParam: QueryParam, apiId: string)
             }
         }
 
-        parentPort?.postMessage(`threadId-${threadId}, url:${pageUrlLink} success`);
+        parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, `threadId-${threadId}, url:${pageUrlLink} success`, undefined));
 
-        appendLogSyncAppLog(formatMsg(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd}, add ${writeDbCount}, cur ${page}`));
+        printLogSync(0, formatMsg(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd}, add ${writeDbCount}, cur ${page}`));
 
-        await delay(randomInt(3000, 6000));
+        // await delay(randomInt(3000, 6000));
     }
 
     process.exit(0);

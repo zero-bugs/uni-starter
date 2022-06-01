@@ -16,4 +16,5 @@ type DownloadParams = {
     rootPath: string;
     url: string;
     extName: string;
+    isUsed: number|null;
 }

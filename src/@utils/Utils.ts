@@ -1,13 +1,14 @@
 import path, {dirname, resolve} from "path";
 import {fileURLToPath} from "url";
 import {PrismaClient} from "@prisma/client";
+import {LogLevel, printLogSync} from "../@log/Log4js.js";
 
 const __filename = fileURLToPath(import.meta.url);
 export const appDirName = dirname(__filename);
 export const appRootDir = resolve(appDirName, "..");
 
 export function getTemplatePath() {
-    console.log(`${__filename},${appDirName},${appRootDir}`);
+    printLogSync(LogLevel.CONSOLE, `${__filename},${appDirName},${appRootDir}`);
     return `${resolve(appRootDir, "..")}${path.sep}templates`;
 }
 
@@ -35,12 +36,12 @@ export const pmsClient = new PrismaClient({
     ],
 });
 pmsClient.$on('warn', (e) => {
-    console.log(e);
+    printLogSync(LogLevel.CONSOLE, e);
 })
 pmsClient.$on('info', (e) => {
-    console.log(e);
+    printLogSync(LogLevel.CONSOLE, e);
 })
 pmsClient.$on('error', (e) => {
-    console.log(e);
+    printLogSync(LogLevel.CONSOLE, e);
 })
 

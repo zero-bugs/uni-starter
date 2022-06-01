@@ -3,10 +3,11 @@ import {randomInt} from "crypto";
 import {parentPort, threadId} from "worker_threads";
 
 import {ImgEntryPo, ResImgEntryPo} from "../@entry/ImgEntryPo.js";
-import {delay} from "./Utils.js";
-import {appendLogSyncAppLog, formatMsg} from "../@log/Log4js.js";
+import {delay, pmsClient} from "./Utils.js";
+import {formatMsg, LogLevel, printLogSync} from "../@log/Log4js.js";
 import * as fs from "fs";
 import {getHttpsProxy} from "../config/ProxyConfig.js";
+import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
 
 const maxRetryCount = 3;
 
@@ -30,7 +31,7 @@ export async function fetchWithRetry(options: RequestInit, pageUrlLink: string, 
         try {
             const response = await fetch(pageUrlLink, options)
             if (response.status !== 200 && response.status !== 201) {
-                appendLogSyncAppLog(formatMsg(`worker execute failed request url:${pageUrlLink}, response:${response.status}, ${await response.text()}`));
+                printLogSync(0, formatMsg(`worker execute failed request url:${pageUrlLink}, response:${response.status}, ${await response.text()}`));
                 ++retry;
                 continue;
             }
@@ -48,14 +49,14 @@ export async function fetchWithRetry(options: RequestInit, pageUrlLink: string, 
             });
             retry = maxRetryCount;
         } catch (error) {
-            parentPort?.postMessage(`threadId-${threadId}, url:${pageUrlLink} failed. msg:${error}`);
+            parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, `threadId-${threadId}, url:${pageUrlLink} failed. msg:${error}`, undefined));
             if (error instanceof AbortError) {
-                appendLogSyncAppLog(formatMsg(`worker execute AbortError with request url:${pageUrlLink}`));
+                printLogSync(0, formatMsg(`worker execute AbortError with request url:${pageUrlLink}`));
             } else {
-                appendLogSyncAppLog(formatMsg(`worker execute unknown error with request url:${pageUrlLink}`));
+                printLogSync(0, formatMsg(`worker execute unknown error with request url:${pageUrlLink}`));
                 console.trace();
             }
-            appendLogSyncAppLog(formatMsg(`http failed, retry:${retry}, error msg:${error}`));
+            printLogSync(0, formatMsg(`http failed, retry:${retry}, error msg:${error}`));
 
             ++retry;
             await delay(randomInt(3000, 6000));
@@ -67,6 +68,10 @@ export async function fetchWithRetry(options: RequestInit, pageUrlLink: string, 
 }
 
 export async function fetchImgWithRetry(options: RequestInit, param: DownloadParams) {
+    if (param.isUsed === 1) {
+        return;
+    }
+
     let proxy = getHttpsProxy();
     if (proxy) {
         options.agent = getHttpsProxy();
@@ -79,6 +84,12 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
 
     let imgName = `${dldPath}/${param.imgId}.${param.extName}`;
     if (fs.existsSync(imgName)) {
+        await pmsClient.image.update({
+            where: {imgId: param.imgId},
+            data: {
+                isUsed: 1
+            }
+        });
         return;
     }
 
@@ -91,37 +102,41 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
         options.signal = controller.signal;
 
         try {
-            appendLogSyncAppLog(formatMsg(`begin to download img:${param.imgId}.${param.extName}, url:${param.url}`));
+            printLogSync(0, formatMsg(`begin to download img:${param.imgId}.${param.extName}, url:${param.url}`));
             const response = await fetch(param.url, options);
+            if (response.status === 404) {
+                printLogSync(0, formatMsg(`image not exist, url:${param.url}, response:${response.status}, ${await response.text()}`));
+                break;
+            }
             if (response.status !== 200 && response.status !== 201) {
-                appendLogSyncAppLog(formatMsg(`worker execute download failed url:${param.url}, response:${response.status}, ${await response.text()}`));
+                printLogSync(0, formatMsg(`worker execute download failed url:${param.url}, response:${response.status}, ${await response.text()}`));
                 ++retry;
                 continue;
             }
 
-            appendLogSyncAppLog(formatMsg(`begin to write img:${param.imgId}.${param.extName}`));
-            // await response.body?.pipe(await fs.createWriteStream(`${dldPath}/${param.id}.${param.extName}`));
+            printLogSync(0, formatMsg(`begin to write img:${param.imgId}.${param.extName}`));
             const arrayBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
-            // fs.createWriteStream(`${dldPath}/${param.id}.${param.extName}`).write(buffer);
 
             fs.writeFile(imgName, buffer, () => {
-                parentPort?.postMessage(`img download failed. ${JSON.stringify(param)}`)
-                console.log(`finished downloading, ${imgName}`);
+                parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, `img download failed. ${JSON.stringify(param)}`, undefined))
+                printLogSync(LogLevel.CONSOLE, `finished downloading, ${imgName}`);
             });
-
-            retry = maxRetryCount;
+            break;
         } catch (error) {
-            parentPort?.postMessage(`threadId-${threadId}, url:${param.url} failed. msg:${error}`);
+            parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, `threadId-${threadId}, url:${param.url} failed. msg:${error}`, undefined));
             if (error instanceof AbortError) {
-                appendLogSyncAppLog(formatMsg(`worker execute AbortError with request url:${param.url}`));
+                printLogSync(0, formatMsg(`worker execute AbortError with request url:${param.url}`));
             } else {
-                appendLogSyncAppLog(formatMsg(`worker execute unknown error with request url:${param.url}`));
+                printLogSync(0, formatMsg(`worker execute unknown error with request url:${param.url}`));
                 console.trace();
             }
-            appendLogSyncAppLog(formatMsg(`http failed, retry:${retry}, error msg:${error}`));
+            printLogSync(0, formatMsg(`http failed, retry:${retry}, error msg:${error}`));
 
             ++retry;
+            if (retry == maxRetryCount) {
+                parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, `img need download again.`, param))
+            }
             await delay(randomInt(3000, 6000));
         } finally {
             clearTimeout(timeout);

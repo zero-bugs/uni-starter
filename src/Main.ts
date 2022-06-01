@@ -1,11 +1,11 @@
 import {pmsClient} from "./@utils/Utils.js";
 import {main} from "./MultiThreads.js";
-import {intLog4j} from "./@log/Log4js.js";
+import {logInit, LogLevel, printLogSync} from "./@log/Log4js.js";
 
-intLog4j();
+logInit();
 
 main().catch(async (reason) => {
-    console.log(`main function execute failed, reason:${reason}`);
-    console.log(`warning, closing client.....`)
+    printLogSync(LogLevel.CONSOLE, `main function execute failed, reason:${reason}`);
+    printLogSync(LogLevel.CONSOLE, `warning, closing client.....`)
     await pmsClient.$disconnect();
 });

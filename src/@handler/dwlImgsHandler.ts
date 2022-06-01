@@ -5,6 +5,19 @@ import {getHttpsProxy} from "../config/ProxyConfig.js";
 import {getFetchType, getPicOutputPath} from "../config/ConfigFile.js";
 import {randomInt} from "crypto";
 
+export async function downloadSingleImage(param: DownloadParams) {
+    let options: RequestInit = {};
+    await fetchImgWithRetry(options, {
+        category: param.category,
+        purity: param.purity,
+        imgId: String(param.imgId),
+        rootPath: `${getPicOutputPath()}/${getFetchType()}`,
+        url: param.url,
+        extName: getExtName(param.extName),
+        isUsed: param.isUsed
+    })
+}
+
 export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
     if (dwlEntryPo.sinceBegin == null) {
         dwlEntryPo.sinceBegin = new Date("1970-01-01 00:00:00");
@@ -46,6 +59,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
         rootPath: `${getPicOutputPath()}/${getFetchType()}`,
         url: image.path,
         extName: getExtName(image.fileType),
+        isUsed: image.isUsed
     })
 
     let cursor = image?.id;
@@ -101,9 +115,10 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
                 rootPath: `${getPicOutputPath()}/${getFetchType()}`,
                 url: img.path,
                 extName: getExtName(img.fileType),
+                isUsed: img.isUsed
             })
 
-            await delay(randomInt(3000, 6000));
+            // await delay(randomInt(3000, 6000));
         }
     }
 }
