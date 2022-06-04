@@ -67,7 +67,7 @@ export async function whSearchListDefault(queryParam: QueryParam, apiId: string)
 
         printLogSync(0, formatMsg(`images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd}, add ${writeDbCount}, cur ${page}`));
 
-        // await delay(randomInt(3000, 6000));
+        await delay(randomInt(3000, 6000));
     }
 
     process.exit(0);

@@ -67,8 +67,24 @@ export async function fetchWithRetry(options: RequestInit, pageUrlLink: string, 
     return imagePoList;
 }
 
+function getNormalizeMonth(param: DownloadParams) {
+    let month = param.createTime.getUTCMonth();
+    let monthDirName = `${month}`
+    if (month >= 1 && month < 10) {
+        monthDirName = `0${month}`;
+    }
+    return monthDirName;
+}
+
 export async function fetchImgWithRetry(options: RequestInit, param: DownloadParams) {
+    // 判断是否下载过
     if (param.isUsed === 1) {
+        return;
+    }
+
+    // 判断时间
+    if (param.createTime.getMilliseconds() < param.sinceBegin.getMilliseconds()
+        || param.createTime.getMilliseconds() > param.sinceEnd.getMilliseconds()) {
         return;
     }
 
@@ -77,11 +93,13 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
         options.agent = getHttpsProxy();
     }
 
-    let dldPath = `${param.rootPath}/${param.category}/${param.purity}`
+    // 目录考虑时间，判断目录是否存在
+    let dldPath = `${param.rootPath}/${param.category}/${param.purity}/${param.createTime.getUTCFullYear()}-${getNormalizeMonth(param)}`
     if (!fs.existsSync(dldPath)) {
         fs.mkdirSync(dldPath, {recursive: true});
     }
 
+    // 判断文件是否存在
     let imgName = `${dldPath}/${param.imgId}.${param.extName}`;
     if (fs.existsSync(imgName)) {
         await pmsClient.image.update({
@@ -118,13 +136,17 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
             const arrayBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
 
-            fs.writeFile(imgName, buffer, () => {
-                parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, `img download failed. ${JSON.stringify(param)}`, undefined))
-                printLogSync(LogLevel.CONSOLE, `finished downloading, ${imgName}`);
+            fs.appendFile(imgName, buffer, (err) => {
+                if (err) {
+                    parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, `img need download again.`, param));
+                    printLogSync(LogLevel.CONSOLE, `image:${imgName} write local failed, err:${err}`);
+                } else {
+                    printLogSync(LogLevel.CONSOLE, `image:${imgName} write local success`);
+                }
             });
             break;
         } catch (error) {
-            parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, `threadId-${threadId}, url:${param.url} failed. msg:${error}`, undefined));
+            parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, `threadId-${threadId}, url:${param.url} failed. msg:${error}`, undefined));
             if (error instanceof AbortError) {
                 printLogSync(0, formatMsg(`worker execute AbortError with request url:${param.url}`));
             } else {
@@ -135,7 +157,7 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
 
             ++retry;
             if (retry == maxRetryCount) {
-                parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, `img need download again.`, param))
+                parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, `img need download again.`, param));
             }
             await delay(randomInt(3000, 6000));
         } finally {

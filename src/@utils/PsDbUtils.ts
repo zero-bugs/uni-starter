@@ -31,6 +31,7 @@ export async function pmsCreateWithCheckExist(entry: ImgEntryPo): Promise<boolea
             views: entry.views,
             favorites: entry.favorites,
             ratio: entry.ratio,
+            isUsed: 0,
             createdTime: new Date(entry.created_at),
         }
     });
