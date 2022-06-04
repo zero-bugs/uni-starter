@@ -8,6 +8,7 @@ import {formatMsg, LogLevel, printLogSync} from "../@log/Log4js.js";
 import * as fs from "fs";
 import {getHttpsProxy} from "../config/ProxyConfig.js";
 import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
+import {ImgDownloadStatus} from "../@entry/ImgDownloadStatus.js";
 
 const maxRetryCount = 3;
 
@@ -68,9 +69,9 @@ export async function fetchWithRetry(options: RequestInit, pageUrlLink: string, 
 }
 
 function getNormalizeMonth(param: DownloadParams) {
-    let month = param.createTime.getUTCMonth();
+    let month = param.createTime.getUTCMonth() + 1;
     let monthDirName = `${month}`
-    if (month >= 1 && month < 10) {
+    if (month > 0 && month < 10) {
         monthDirName = `0${month}`;
     }
     return monthDirName;
@@ -78,7 +79,7 @@ function getNormalizeMonth(param: DownloadParams) {
 
 export async function fetchImgWithRetry(options: RequestInit, param: DownloadParams) {
     // 判断是否下载过
-    if (param.isUsed === 1) {
+    if (param.isUsed !== ImgDownloadStatus.UN_DOWNLOADED) {
         return;
     }
 
@@ -105,7 +106,7 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
         await pmsClient.image.update({
             where: {imgId: param.imgId},
             data: {
-                isUsed: 1
+                isUsed: ImgDownloadStatus.DOWNLOADED,
             }
         });
         return;
@@ -123,6 +124,13 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
             printLogSync(0, formatMsg(`begin to download img:${param.imgId}.${param.extName}, url:${param.url}`));
             const response = await fetch(param.url, options);
             if (response.status === 404) {
+                await pmsClient.image.update({
+                    where: {imgId: param.imgId},
+                    data: {
+                        isUsed: ImgDownloadStatus.NOT_EXIST,
+                    }
+                });
+
                 printLogSync(0, formatMsg(`image not exist, url:${param.url}, response:${response.status}, ${await response.text()}`));
                 break;
             }

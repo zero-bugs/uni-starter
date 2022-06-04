@@ -1,5 +1,7 @@
 import {ImgEntryPo} from "../@entry/ImgEntryPo.js";
 import {pmsClient} from "./Utils.js";
+import {ImgDownloadStatus} from "../@entry/ImgDownloadStatus.js";
+
 
 /**
  * create before check exist or not.
@@ -31,7 +33,7 @@ export async function pmsCreateWithCheckExist(entry: ImgEntryPo): Promise<boolea
             views: entry.views,
             favorites: entry.favorites,
             ratio: entry.ratio,
-            isUsed: 0,
+            isUsed: ImgDownloadStatus.UN_DOWNLOADED,
             createdTime: new Date(entry.created_at),
         }
     });
