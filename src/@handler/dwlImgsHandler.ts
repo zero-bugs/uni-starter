@@ -3,6 +3,7 @@ import {fetchImgWithRetry} from "../@utils/HttpUtils.js";
 import {RequestInit} from "node-fetch";
 import {getHttpsProxy} from "../config/ProxyConfig.js";
 import {getFetchType, getPicOutputPath} from "../config/ConfigFile.js";
+import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import {randomInt} from "crypto";
 
 export async function downloadSingleImage(param: DownloadParams) {
@@ -78,6 +79,9 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
         if (start + limit > dwlEntryPo.end) {
             limit = dwlEntryPo.end - start;
         }
+
+        printLogSync(LogLevel.CONSOLE, `begin download start:${start}-end:${dwlEntryPo.end}, cursor:${cursor}, limit:${limit}`);
+
         const images = await pmsClient.image.findMany({
             take: limit,
             skip: 1,// Skip the cursor
@@ -114,7 +118,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
                 options.agent = getHttpsProxy();
             }
 
-            await fetchImgWithRetry(options, {
+            let res = await fetchImgWithRetry(options, {
                 category: img.category,
                 purity: img.purity,
                 imgId: String(img.imgId),
@@ -127,7 +131,11 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
                 isUsed: img.isUsed
             })
 
-            // await delay(randomInt(3000, 6000));
+            if (res?.valueOf() === false) {
+                await delay(randomInt(500, 1000));
+                continue;
+            }
+            await delay(randomInt(2000, 4000));
         }
     }
 }

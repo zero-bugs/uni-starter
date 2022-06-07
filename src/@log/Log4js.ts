@@ -7,10 +7,6 @@ const defLog = `${logPath}\\app.log`;
 const infoLog = `${logPath}\\info.log`;
 const errLog = `${logPath}\\errors.log`;
 
-export function formatMsg(msg: string | unknown) {
-    return `[TID-${threadId}][${msg}]`;
-}
-
 export enum LogLevel {
     CONSOLE,
     DEBUG,
@@ -27,10 +23,10 @@ export function logInit() {
 export function printLogSync(level: LogLevel = LogLevel.INFO, msg: any) {
     switch (level) {
         case LogLevel.CONSOLE:
-            console.log(msg);
+            console.log(`[TID-${threadId}][${new Date().toUTCString()}]${msg}`);
             break;
         case LogLevel.INFO:
-            fs.appendFile(infoLog, `[${new Date()}]${msg}${os.EOL}`, err => {
+            fs.appendFile(infoLog, `[TID-${threadId}][${new Date()}]${msg}${os.EOL}`, err => {
                 if (err) {
                     console.error(err)
                     return
@@ -38,7 +34,7 @@ export function printLogSync(level: LogLevel = LogLevel.INFO, msg: any) {
             });
             break
         case LogLevel.ERROR:
-            fs.appendFile(errLog, `${msg}${os.EOL}`, err => {
+            fs.appendFile(errLog, `[TID-${threadId}][${new Date()}]${msg}${os.EOL}`, err => {
                 if (err) {
                     console.error(err)
                     return
@@ -46,7 +42,7 @@ export function printLogSync(level: LogLevel = LogLevel.INFO, msg: any) {
             });
             break;
         default:
-            fs.appendFile(defLog, `[${new Date()}]${msg}${os.EOL}`, err => {
+            fs.appendFile(defLog, `[TID-${threadId}][${new Date()}]${msg}${os.EOL}`, err => {
                 if (err) {
                     console.error(err)
                     return

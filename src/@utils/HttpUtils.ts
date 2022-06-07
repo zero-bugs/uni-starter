@@ -4,7 +4,7 @@ import {parentPort, threadId} from "worker_threads";
 
 import {ImgEntryPo, ResImgEntryPo} from "../@entry/ImgEntryPo.js";
 import {delay, pmsClient} from "./Utils.js";
-import {formatMsg, LogLevel, printLogSync} from "../@log/Log4js.js";
+import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import * as fs from "fs";
 import {getHttpsProxy} from "../config/ProxyConfig.js";
 import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
@@ -32,7 +32,7 @@ export async function fetchWithRetry(options: RequestInit, pageUrlLink: string, 
         try {
             const response = await fetch(pageUrlLink, options)
             if (response.status !== 200 && response.status !== 201) {
-                printLogSync(0, formatMsg(`worker execute failed request url:${pageUrlLink}, response:${response.status}, ${await response.text()}`));
+                printLogSync(0, `worker execute failed request url:${pageUrlLink}, response:${response.status}, ${await response.text()}`);
                 ++retry;
                 continue;
             }
@@ -52,12 +52,12 @@ export async function fetchWithRetry(options: RequestInit, pageUrlLink: string, 
         } catch (error) {
             parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, `threadId-${threadId}, url:${pageUrlLink} failed. msg:${error}`, undefined));
             if (error instanceof AbortError) {
-                printLogSync(0, formatMsg(`worker execute AbortError with request url:${pageUrlLink}`));
+                printLogSync(0, `worker execute AbortError with request url:${pageUrlLink}`);
             } else {
-                printLogSync(0, formatMsg(`worker execute unknown error with request url:${pageUrlLink}`));
+                printLogSync(0, `worker execute unknown error with request url:${pageUrlLink}`);
                 console.trace();
             }
-            printLogSync(0, formatMsg(`http failed, retry:${retry}, error msg:${error}`));
+            printLogSync(0, `http failed, retry:${retry}, error msg:${error}`);
 
             ++retry;
             await delay(randomInt(3000, 6000));
@@ -69,7 +69,7 @@ export async function fetchWithRetry(options: RequestInit, pageUrlLink: string, 
 }
 
 function getNormalizeMonth(param: DownloadParams) {
-    let month = param.createTime.getUTCMonth() + 1;
+    let month = param.createTime.getMonth() + 1;
     let monthDirName = `${month}`
     if (month > 0 && month < 10) {
         monthDirName = `0${month}`;
@@ -80,13 +80,13 @@ function getNormalizeMonth(param: DownloadParams) {
 export async function fetchImgWithRetry(options: RequestInit, param: DownloadParams) {
     // 判断是否下载过
     if (param.isUsed !== ImgDownloadStatus.UN_DOWNLOADED) {
-        return;
+        return false;
     }
 
     // 判断时间
     if (param.createTime.getMilliseconds() < param.sinceBegin.getMilliseconds()
         || param.createTime.getMilliseconds() > param.sinceEnd.getMilliseconds()) {
-        return;
+        return false;
     }
 
     let proxy = getHttpsProxy();
@@ -95,7 +95,7 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
     }
 
     // 目录考虑时间，判断目录是否存在
-    let dldPath = `${param.rootPath}/${param.category}/${param.purity}/${param.createTime.getUTCFullYear()}-${getNormalizeMonth(param)}`
+    let dldPath = `${param.rootPath}/${param.category}/${param.purity}/${param.createTime.getFullYear()}-${getNormalizeMonth(param)}`
     if (!fs.existsSync(dldPath)) {
         fs.mkdirSync(dldPath, {recursive: true});
     }
@@ -109,7 +109,7 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
                 isUsed: ImgDownloadStatus.DOWNLOADED,
             }
         });
-        return;
+        return false;
     }
 
     let retry = 0;
@@ -121,7 +121,7 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
         options.signal = controller.signal;
 
         try {
-            printLogSync(0, formatMsg(`begin to download img:${param.imgId}.${param.extName}, url:${param.url}`));
+            printLogSync(0, `begin to download img:${param.imgId}.${param.extName}, url:${param.url}`);
             const response = await fetch(param.url, options);
             if (response.status === 404) {
                 await pmsClient.image.update({
@@ -131,16 +131,16 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
                     }
                 });
 
-                printLogSync(0, formatMsg(`image not exist, url:${param.url}, response:${response.status}, ${await response.text()}`));
+                printLogSync(0, `image not exist, url:${param.url}, response:${response.status}, ${await response.text()}`);
                 break;
             }
             if (response.status !== 200 && response.status !== 201) {
-                printLogSync(0, formatMsg(`worker execute download failed url:${param.url}, response:${response.status}, ${await response.text()}`));
+                printLogSync(0, `worker execute download failed url:${param.url}, response:${response.status}, ${await response.text()}`);
                 ++retry;
                 continue;
             }
 
-            printLogSync(0, formatMsg(`begin to write img:${param.imgId}.${param.extName}`));
+            printLogSync(0, `begin to write img:${param.imgId}.${param.extName}`);
             const arrayBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
 
@@ -156,18 +156,18 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
         } catch (error) {
             parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, `threadId-${threadId}, url:${param.url} failed. msg:${error}`, undefined));
             if (error instanceof AbortError) {
-                printLogSync(0, formatMsg(`worker execute AbortError with request url:${param.url}`));
+                printLogSync(0, `worker execute AbortError with request url:${param.url}`);
             } else {
-                printLogSync(0, formatMsg(`worker execute unknown error with request url:${param.url}`));
+                printLogSync(0, `worker execute unknown error with request url:${param.url}`);
                 console.trace();
             }
-            printLogSync(0, formatMsg(`http failed, retry:${retry}, error msg:${error}`));
+            printLogSync(0, `http failed, retry:${retry}, error msg:${error}`);
 
             ++retry;
             if (retry == maxRetryCount) {
                 parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, `img need download again.`, param));
             }
-            await delay(randomInt(3000, 6000));
+            await delay(randomInt(2000, 4000));
         } finally {
             clearTimeout(timeout);
         }
