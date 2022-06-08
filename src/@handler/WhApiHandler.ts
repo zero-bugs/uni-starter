@@ -2,7 +2,7 @@ import {RequestInit} from "node-fetch";
 import {randomInt} from "crypto";
 
 import {ImgEntryPo} from "../@entry/ImgEntryPo.js";
-import {printLogSync} from "../@log/Log4js.js";
+import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import {delay} from "../@utils/Utils.js";
 
 import {fetchWithRetry} from "../@utils/HttpUtils.js";
@@ -50,7 +50,7 @@ export async function whSearchListDefault(queryParam: QueryParam, apiId: string)
             }
         })
         if (validImgCount === 0 || imagePoList.length === 0) {
-            printLogSync(0, `images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd} have handled, break...`);
+            printLogSync(LogLevel.INFO, `images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd} have handled, break...`);
             continue;
         }
 
@@ -65,7 +65,7 @@ export async function whSearchListDefault(queryParam: QueryParam, apiId: string)
 
         parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, `threadId-${threadId}, url:${pageUrlLink} success`, undefined));
 
-        printLogSync(0, `images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd}, add ${writeDbCount}, cur ${page}`);
+        printLogSync(LogLevel.INFO, `images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd}, add ${writeDbCount}, cur ${page}`);
 
         await delay(randomInt(3000, 6000));
     }

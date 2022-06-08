@@ -32,7 +32,7 @@ export async function fetchWithRetry(options: RequestInit, pageUrlLink: string, 
         try {
             const response = await fetch(pageUrlLink, options)
             if (response.status !== 200 && response.status !== 201) {
-                printLogSync(0, `worker execute failed request url:${pageUrlLink}, response:${response.status}, ${await response.text()}`);
+                printLogSync(LogLevel.INFO, `worker execute failed request url:${pageUrlLink}, response:${response.status}, ${await response.text()}`);
                 ++retry;
                 continue;
             }
@@ -52,12 +52,12 @@ export async function fetchWithRetry(options: RequestInit, pageUrlLink: string, 
         } catch (error) {
             parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, `threadId-${threadId}, url:${pageUrlLink} failed. msg:${error}`, undefined));
             if (error instanceof AbortError) {
-                printLogSync(0, `worker execute AbortError with request url:${pageUrlLink}`);
+                printLogSync(LogLevel.ERROR, `worker execute AbortError with request url:${pageUrlLink}`);
             } else {
-                printLogSync(0, `worker execute unknown error with request url:${pageUrlLink}`);
+                printLogSync(LogLevel.ERROR, `worker execute unknown error with request url:${pageUrlLink}`);
                 console.trace();
             }
-            printLogSync(0, `http failed, retry:${retry}, error msg:${error}`);
+            printLogSync(LogLevel.ERROR, `http failed, retry:${retry}, error msg:${error}`);
 
             ++retry;
             await delay(randomInt(3000, 6000));
@@ -121,7 +121,7 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
         options.signal = controller.signal;
 
         try {
-            printLogSync(0, `begin to download img:${param.imgId}.${param.extName}, url:${param.url}`);
+            printLogSync(LogLevel.INFO, `begin to download img:${param.imgId}.${param.extName}, url:${param.url}`);
             const response = await fetch(param.url, options);
             if (response.status === 404) {
                 await pmsClient.image.update({
@@ -131,16 +131,16 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
                     }
                 });
 
-                printLogSync(0, `image not exist, url:${param.url}, response:${response.status}, ${await response.text()}`);
+                printLogSync(LogLevel.INFO, `image not exist, url:${param.url}, response:${response.status}, ${await response.text()}`);
                 break;
             }
             if (response.status !== 200 && response.status !== 201) {
-                printLogSync(0, `worker execute download failed url:${param.url}, response:${response.status}, ${await response.text()}`);
+                printLogSync(LogLevel.INFO, `worker execute download failed url:${param.url}, response:${response.status}, ${await response.text()}`);
                 ++retry;
                 continue;
             }
 
-            printLogSync(0, `begin to write img:${param.imgId}.${param.extName}`);
+            printLogSync(LogLevel.INFO, `begin to write img:${param.imgId}.${param.extName}`);
             const arrayBuffer = await response.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
 
@@ -152,16 +152,24 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
                     printLogSync(LogLevel.CONSOLE, `image:${imgName} write local success`);
                 }
             });
+
+            await pmsClient.image.update({
+                where: {imgId: param.imgId},
+                data: {
+                    isUsed: ImgDownloadStatus.DOWNLOADED,
+                }
+            });
+
             break;
         } catch (error) {
             parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, `threadId-${threadId}, url:${param.url} failed. msg:${error}`, undefined));
             if (error instanceof AbortError) {
-                printLogSync(0, `worker execute AbortError with request url:${param.url}`);
+                printLogSync(LogLevel.ERROR, `worker execute AbortError with request url:${param.url}`);
             } else {
-                printLogSync(0, `worker execute unknown error with request url:${param.url}`);
+                printLogSync(LogLevel.ERROR, `worker execute unknown error with request url:${param.url}`);
                 console.trace();
             }
-            printLogSync(0, `http failed, retry:${retry}, error msg:${error}`);
+            printLogSync(LogLevel.ERROR, `http failed, retry:${retry}, error msg:${error}`);
 
             ++retry;
             if (retry == maxRetryCount) {

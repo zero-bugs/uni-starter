@@ -75,10 +75,10 @@ export class WorkerPool extends EventEmitter {
                 this.runTask(new WorkerTaskInfo(TaskKeyId.WH_DOWNLOAD_ONE_01, postMsg.data));
                 return;
             }
-            printLogSync(0, `work pool result, id:${postMsg.id}, msg:${postMsg.id}, data:${JSON.stringify(postMsg.data)}`);
+            printLogSync(LogLevel.INFO, `work pool result, id:${postMsg.id}, msg:${postMsg.id}, data:${JSON.stringify(postMsg.data)}`);
             return;
         }
-        printLogSync(0, `work pool result:${result}`);
+        printLogSync(LogLevel.INFO, `work pool result:${result}`);
     }
 
     runTask(task: WorkerTaskInfo | undefined): boolean {

@@ -132,7 +132,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
             })
 
             if (res?.valueOf() === false) {
-                await delay(randomInt(500, 1000));
+                // await delay(randomInt(500, 1000));
                 continue;
             }
             await delay(randomInt(2000, 4000));
