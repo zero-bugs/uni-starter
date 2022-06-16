@@ -1,0 +1,61 @@
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../node_modules/@prisma/client"
+  binaryTargets = ["native"]
+  engineType    = "library"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Image {
+  id          Int      @id @default(autoincrement())
+  imgId       String   @unique
+  fileType    String
+  fileSize    Int
+  dimensionX  Int
+  dimensionY  Int
+  purity      String
+  category    String
+  path        String
+  url         String?
+  source      String?
+  colors      String?
+  desc        String?
+  views       Int?
+  favorites   Int?
+  ratio       String?
+  author      Author?  @relation(fields: [authorId], references: [id])
+  authorId    Int?
+  tags        Tag[]
+  isUsed      Int?
+  createdTime DateTime
+  createAt    DateTime @default(now())
+  updateAt    DateTime @updatedAt
+}
+
+model Author {
+  id       Int      @id @default(autoincrement())
+  realId   String?
+  name     String
+  desc     String?
+  type     String
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+  image    Image[]
+}
+
+model Tag {
+  id         Int      @id @default(autoincrement())
+  realId     String?
+  name       String
+  alias      String?
+  categoryId String?
+  category   String?
+  createAt   DateTime @default(now())
+  updateAt   DateTime @updatedAt
+  image      Image?   @relation(fields: [tagId], references: [id])
+  tagId      Int
+}

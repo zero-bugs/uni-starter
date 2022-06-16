@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "target": "ESNext",
+    "sourceMap": true,
+    "allowJs": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "Node",
+    "declaration": true,
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "ESNext",
+      "esModuleInterop": true
+    }
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./src/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
