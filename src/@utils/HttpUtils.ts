@@ -172,7 +172,7 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
             printLogSync(LogLevel.ERROR, `http failed, retry:${retry}, error msg:${error}`);
 
             ++retry;
-            if (retry == maxRetryCount) {
+            if (retry === maxRetryCount) {
                 parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, `img need download again.`, param));
             }
             await delay(randomInt(2000, 4000));

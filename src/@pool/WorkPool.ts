@@ -14,12 +14,12 @@ const appDirName = dirname(__filename);
 
 
 export class WorkerTaskInfo extends AsyncResource {
-    apiId: string;
+    taskId: string;
     data: any;
 
-    constructor(apiId: string, data: any) {
+    constructor(taskId: string, data: any) {
         super(String(kWorkerFreedEvent));
-        this.apiId = apiId;
+        this.taskId = taskId;
         this.data = data;
     }
 }

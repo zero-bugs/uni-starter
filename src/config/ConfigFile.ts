@@ -17,6 +17,13 @@ export enum TaskKeyId {
     TASK_ID_DEF = "ID_DEFAULT"
 }
 
+export enum ApiKeyId {
+    WH_QUERY_01 = 'WH_QUERY_01',
+    WH_QUERY_02 = 'WH_QUERY_02',
+    WH_QUERY_03 = 'WH_QUERY_03',
+    WH_QUERY_04 = 'WH_QUERY_04',
+}
+
 export const apiListConf = JSON.parse(
     fs.readFileSync(getApiListFile(), "utf-8")
 );

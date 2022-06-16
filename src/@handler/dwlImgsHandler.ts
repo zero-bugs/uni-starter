@@ -80,7 +80,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
             limit = dwlEntryPo.end - start;
         }
 
-        printLogSync(LogLevel.CONSOLE, `begin download start:${start}-end:${dwlEntryPo.end}, cursor:${cursor}, limit:${limit}`);
+        printLogSync(LogLevel.INFO, `begin download start:${start}-end:${dwlEntryPo.end}, cursor:${cursor}, limit:${limit}`);
 
         const images = await pmsClient.image.findMany({
             take: limit,

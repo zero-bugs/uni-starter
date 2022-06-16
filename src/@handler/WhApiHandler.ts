@@ -18,7 +18,7 @@ import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
  * @param apiId apiId
  * @param queryParam
  */
-export async function whSearchListDefault(queryParam: QueryParam, apiId: string) {
+export async function whSearchListDefault(queryParam: QueryParam) {
     let page = queryParam.startPage === 0 ? 1 : queryParam.startPage;
     if (queryParam.sinceBegin == null) {
         queryParam.sinceBegin = new Date("1970-01-01 00:00:00");
@@ -27,7 +27,7 @@ export async function whSearchListDefault(queryParam: QueryParam, apiId: string)
         queryParam.sinceEnd = new Date();
     }
 
-    let endpoint = getApiEndpoint(apiId);
+    let endpoint = getApiEndpoint(queryParam.apiId);
     let urlLink = `${endpoint}?purity=${queryParam.purity}&category=${queryParam.category}&sorting=${queryParam.sorting}&order=${queryParam.order}&apikey=${queryParam.apikey}`
     while (page <= queryParam.endPage) {
         let pageUrlLink = `${urlLink}&page=${page}`
