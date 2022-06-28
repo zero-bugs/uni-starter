@@ -50,7 +50,7 @@ export async function fetchWithRetry(options: RequestInit, pageUrlLink: string, 
             });
             retry = maxRetryCount;
         } catch (error) {
-            parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, `threadId-${threadId}, url:${pageUrlLink} failed. msg:${error}`, undefined));
+            parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, '0', `threadId-${threadId}, url:${pageUrlLink} failed. msg:${error}`, undefined));
             if (error instanceof AbortError) {
                 printLogSync(LogLevel.ERROR, `worker execute AbortError with request url:${pageUrlLink}`);
             } else {
@@ -146,7 +146,7 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
 
             fs.appendFile(imgName, buffer, (err) => {
                 if (err) {
-                    parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, `img need download again.`, param));
+                    parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, '0', `img need download again.`, param));
                     printLogSync(LogLevel.CONSOLE, `image:${imgName} write local failed, err:${err}`);
                 } else {
                     printLogSync(LogLevel.CONSOLE, `image:${imgName} write local success`);
@@ -162,18 +162,10 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
 
             break;
         } catch (error) {
-            parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, `threadId-${threadId}, url:${param.url} failed. msg:${error}`, undefined));
-            if (error instanceof AbortError) {
-                printLogSync(LogLevel.ERROR, `worker execute AbortError with request url:${param.url}`);
-            } else {
-                printLogSync(LogLevel.ERROR, `worker execute unknown error with request url:${param.url}`);
-                console.trace();
-            }
-            printLogSync(LogLevel.ERROR, `http failed, retry:${retry}, error msg:${error}`);
-
+            printLogSync(LogLevel.ERROR, `http failed, type:${typeof error}, retry:${retry}, error msg:${error}`);
             ++retry;
             if (retry === maxRetryCount) {
-                parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, `img need download again.`, param));
+                parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, '0', `img need download again.`, param));
             }
             await delay(randomInt(2000, 4000));
         } finally {

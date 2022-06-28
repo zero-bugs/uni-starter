@@ -22,3 +22,6 @@ TODO LIST
 
 
 
+IDE parameter:
+Node Options: --loader ts-node/esm --trace-warnings
+RUST_BACKTRACE=full

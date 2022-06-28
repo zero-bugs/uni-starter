@@ -63,12 +63,10 @@ export async function whSearchListDefault(queryParam: QueryParam) {
             }
         }
 
-        parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, `threadId-${threadId}, url:${pageUrlLink} success`, undefined));
+        parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_NORMAL, '0', `threadId-${threadId}, url:${pageUrlLink} success`, undefined));
 
         printLogSync(LogLevel.INFO, `images created between ${queryParam.sinceBegin} and ${queryParam.sinceEnd}, add ${writeDbCount}, cur ${page}`);
 
         await delay(randomInt(3000, 6000));
     }
-
-    process.exit(0);
 }
