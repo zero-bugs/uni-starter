@@ -1,10 +1,11 @@
 import fs from "fs";
-import {getApiListFile, getGlobalConfFile} from "../@utils/Utils.js";
+import {getApiListFile, getGlobalConfFile, getPwListFile} from "../@utils/Utils.js";
 
 export enum PicLibType {
     WH = "wh",
     KH = "kh",
     YD = "yd",
+    FP = "fp",
 }
 
 export enum TaskKeyId {
@@ -14,6 +15,7 @@ export enum TaskKeyId {
     WH_QUERY_04 = "WH_QUERY_04",
     WH_DOWNLOAD_ALL_01 = "WH_DOWNLOAD_ALL_01",
     WH_DOWNLOAD_ONE_01 = 'WH_DOWNLOAD_ONE_01',
+    FP_QUERY_01 = "FP_QUERY_01",
     TASK_ID_DEF = "ID_DEFAULT"
 }
 
@@ -61,4 +63,15 @@ export function getFetchType() {
 
 export function getPicOutputPath() {
     return globalConfig['picOutputPath'];
+}
+
+
+export const pwConfigList = JSON.parse(
+    fs.readFileSync(getPwListFile(), "utf-8")
+);
+
+
+export function getPwAddress(type:string): string {
+    let basicObj = pwConfigList[type].basic;
+    return `${basicObj.protocol}://${basicObj.host}`;
 }

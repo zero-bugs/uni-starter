@@ -16,6 +16,10 @@ export function getApiListFile() {
     return `${getTemplatePath()}${path.sep}apiList.json`;
 }
 
+export function getPwListFile() {
+    return `${getTemplatePath()}${path.sep}pwList.json`;
+}
+
 export function getProxyConfFile() {
     return `${getTemplatePath()}${path.sep}proxyConfig.json`;
 }

@@ -69,4 +69,9 @@ export async function main() {
         apikey: `${getApiKey()}`,
         sinceBegin: new Date("2022-06-01 00:00:00")
     }));
+
+    pool.runTask(new WorkerTaskInfo(TaskKeyId.FP_QUERY_01, {
+        keyWord:"",
+    }));
+
 }
