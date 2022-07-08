@@ -15,7 +15,7 @@ export async function downloadSingleImage(param: DownloadParams) {
         createTime: param.createTime,
         sinceBegin: param.sinceBegin,
         sinceEnd: param.sinceEnd,
-        rootPath: `${getPicOutputPath()}/${getFetchType()}`,
+        rootPath: param.rootPath,
         url: param.url,
         extName: getExtName(param.extName),
         isUsed: param.isUsed

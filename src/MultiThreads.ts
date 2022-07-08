@@ -50,28 +50,28 @@ export async function main() {
     // }));
 
     pool.runTask(new WorkerTaskInfo(TaskKeyId.WH_QUERY_02, {
-        purity: 'nsfw',
-        category: 'people',
+        purity: '001',
+        category: '001',
         apikey: `${getApiKey()}`,
         sinceBegin: new Date("2022-06-01 00:00:00")
     }));
 
     pool.runTask(new WorkerTaskInfo(TaskKeyId.WH_QUERY_02, {
-        purity: 'nsfw',
-        category: 'anime',
+        purity: '001',
+        category: '010',
         apikey: `${getApiKey()}`,
         sinceBegin: new Date("2022-06-01 00:00:00")
     }));
 
     pool.runTask(new WorkerTaskInfo(TaskKeyId.WH_QUERY_02, {
-        purity: 'nsfw',
-        category: 'general',
+        purity: '001',
+        category: '100',
         apikey: `${getApiKey()}`,
         sinceBegin: new Date("2022-06-01 00:00:00")
     }));
 
-    pool.runTask(new WorkerTaskInfo(TaskKeyId.FP_QUERY_01, {
-        keyWord:"",
-    }));
+    // pool.runTask(new WorkerTaskInfo(TaskKeyId.FP_QUERY_01, {
+    //     keyWord:"",
+    // }));
 
 }
