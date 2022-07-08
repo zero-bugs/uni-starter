@@ -45,3 +45,15 @@ pmsClient.$on('error', (e) => {
     printLogSync(LogLevel.CONSOLE, e);
 })
 
+export function getExtName(fileType: string) {
+    let extName = fileType;
+    if (extName.indexOf('/') !== -1) {
+        extName = extName.substring(extName.indexOf('/') + 1);
+    }
+
+    if (['jpeg', 'jpg', 'jpe', 'jfif', 'jif'].includes(extName)) {
+        return 'jpg';
+    }
+
+    return extName;
+}

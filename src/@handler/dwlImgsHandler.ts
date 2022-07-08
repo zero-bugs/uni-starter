@@ -1,4 +1,4 @@
-import {delay, pmsClient} from "../@utils/Utils.js";
+import {delay, getExtName, pmsClient} from "../@utils/Utils.js";
 import {fetchImgWithRetry} from "../@utils/HttpUtils.js";
 import {RequestInit} from "node-fetch";
 import {getHttpsProxy} from "../config/ProxyConfig.js";
@@ -138,17 +138,4 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
             await delay(randomInt(2000, 4000));
         }
     }
-}
-
-function getExtName(fileType: string) {
-    let extName = fileType;
-    if (extName.indexOf('/') !== -1) {
-        extName = extName.substring(extName.indexOf('/') + 1);
-    }
-
-    if (['jpeg', 'jpg', 'jpe', 'jfif', 'jif'].includes(extName)) {
-        return 'jpg';
-    }
-
-    return extName;
 }

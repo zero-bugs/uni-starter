@@ -9,7 +9,7 @@ export enum PicLibType {
 
 export enum TaskKeyId {
     WH_QUERY_ALL_01 = "WH_QUERY_ALL_01",
-    WH_QUERY_02 = "WH_QUERY_02",
+    WH_QUERY_02 = "WH_QUERY_02", //下载最新
     WH_QUERY_03 = "WH_QUERY_03",
     WH_QUERY_04 = "WH_QUERY_04",
     WH_DOWNLOAD_ALL_01 = "WH_DOWNLOAD_ALL_01",
@@ -37,6 +37,9 @@ export function getBaseList(): string {
 }
 
 export function getApiEndpoint(apiId: string): string {
+    if (apiId === null || apiId === undefined) {
+        apiId = ApiKeyId.WH_QUERY_01;
+    }
     let apiType = globalConfig["type"];
     let basicObj = apiListConf[apiType].basic;
     let uri = "";

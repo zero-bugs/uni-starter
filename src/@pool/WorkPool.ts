@@ -69,14 +69,16 @@ export class UniWorkerPool extends EventEmitter {
 
     private handlePostMsg(result: PostMsgEventEntry) {
         let postMsg = result as PostMsgEventEntry;
-        printLogSync(LogLevel.INFO, `work pool handlePostMsg => id:${postMsg.id}, msg:${postMsg.id}, data:${JSON.stringify(postMsg.data)}`);
+        printLogSync(LogLevel.INFO, `work pool handlePostMsg => id:${postMsg.id}, msg:${postMsg.id}, data:${JSON.stringify(postMsg.data)}` +
+            `free workers:${this.freeList.length}, working workers:${this.workingList.length}, task workers: ${this.tasks.length}, cur workerId:${this.workerIdCurrent}`);
         switch (postMsg.id) {
             case PostMsgIdEnum.EVENT_FAIL_RETRY:
                 this.runTask(new WorkerTaskInfo(TaskKeyId.WH_DOWNLOAD_ONE_01, postMsg.data));
                 break;
             case PostMsgIdEnum.EVENT_NEXT_WORK:
                 // 需要恢复worker到freelist中
-                this.workingList.every(((value, index, array) => {
+                this.workingList.forEach(((value, index, array) => {
+                    printLogSync(LogLevel.INFO, `work pool EVENT_NEXT_WORK, value:${JSON.stringify(value)},index:${index}}`);
                     if (value.id === postMsg.workerId) {
                         printLogSync(LogLevel.INFO, `work pool EVENT_NEXT_WORK => id:${postMsg.id}, hit, data:${JSON.stringify(postMsg.data)}`);
                         this.workingList.splice(index, 1);
@@ -88,7 +90,7 @@ export class UniWorkerPool extends EventEmitter {
 
                 // 结束进程
                 if (this.workingList.length === 0 && this.tasks.length === 0) {
-                    printLogSync(LogLevel.INFO, `work pool is empty, exit process => free workers:${this.freeList.length}, core pool size: ${this.poolSize}, cur workerId:${this.workerIdCurrent}`)
+                    printLogSync(LogLevel.INFO, `work pool is empty, exit process => free workers:${this.freeList.length}, core pool size: ${this.poolSize}, cur workerId:${this.workerIdCurrent}`);
                     this.close();
                 }
                 break;

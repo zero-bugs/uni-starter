@@ -1,9 +1,9 @@
 type QueryParam = {
-    purity: String;
+    purity: string;
     category: string;
     apikey: string;
     apiId: string;
-    sorting: String;
+    sorting: string;
     order: string;
     startPage: number;
     endPage: number;
