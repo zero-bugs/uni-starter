@@ -1,0 +1,3 @@
+type FpQueryEntry = {
+    keyword: string;
+}

@@ -23,6 +23,10 @@ export async function whSearchListLatest(queryParam: QueryParam) {
         queryParam.sinceEnd = new Date();
     }
 
+    if (queryParam.category ===null) {
+        queryParam.category='111';
+    }
+
     let endpoint = getApiEndpoint(queryParam.apiId);
     let urlLink = `${endpoint}?purity=${queryParam.purity}&category=${queryParam.category}&sorting=date_added&order=desc&apikey=${queryParam.apikey}`
     let page = 0;
@@ -56,8 +60,8 @@ export async function whSearchListLatest(queryParam: QueryParam) {
             // check exist or not
             if (await pmsCreateWithCheckExist(entry)) {
                 await downloadSingleImage({
-                    category: queryParam.category,
-                    purity: queryParam.purity,
+                    category: entry.category,
+                    purity: entry.purity,
                     imgId: entry.id,
                     createTime: new Date(entry.created_at),
                     sinceBegin: queryParam.sinceBegin,//2022-03-19 00:15:04
@@ -68,9 +72,9 @@ export async function whSearchListLatest(queryParam: QueryParam) {
                     isUsed: ImgDownloadStatus.UN_DOWNLOADED,
                 });
             }
-
-            await delay(randomInt(1000, 3000));
         }
+        printLogSync(LogLevel.INFO, `images latest search, current page:${page}, purity:${queryParam.purity},category:${queryParam.category}`);
+        await delay(randomInt(1000, 3000));
     }
 }
 

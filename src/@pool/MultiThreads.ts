@@ -1,5 +1,5 @@
-import {getApiKey, TaskKeyId} from "./config/ConfigFile.js";
-import {UniWorkerPool, WorkerTaskInfo} from "./@pool/WorkPool.js";
+import {ApiKeyId, getApiKey, TaskKeyId} from "../config/ConfigFile.js";
+import {UniWorkerPool, WorkerTaskInfo} from "./WorkPool.js";
 
 const POOL_SIZE = 3;
 
@@ -51,24 +51,24 @@ export async function main() {
 
     pool.runTask(new WorkerTaskInfo(TaskKeyId.WH_QUERY_02, {
         purity: '001',
-        category: '001',
+        category: '111',
         apikey: `${getApiKey()}`,
         sinceBegin: new Date("2022-06-01 00:00:00")
     }));
 
-    pool.runTask(new WorkerTaskInfo(TaskKeyId.WH_QUERY_02, {
-        purity: '001',
-        category: '010',
-        apikey: `${getApiKey()}`,
-        sinceBegin: new Date("2022-06-01 00:00:00")
-    }));
-
-    pool.runTask(new WorkerTaskInfo(TaskKeyId.WH_QUERY_02, {
-        purity: '001',
-        category: '100',
-        apikey: `${getApiKey()}`,
-        sinceBegin: new Date("2022-06-01 00:00:00")
-    }));
+    // pool.runTask(new WorkerTaskInfo(TaskKeyId.WH_QUERY_02, {
+    //     purity: '001',
+    //     category: '110',
+    //     apikey: `${getApiKey()}`,
+    //     sinceBegin: new Date("2022-06-01 00:00:00")
+    // }));
+    //
+    // pool.runTask(new WorkerTaskInfo(TaskKeyId.WH_QUERY_02, {
+    //     purity: '001',
+    //     category: '111',
+    //     apikey: `${getApiKey()}`,
+    //     sinceBegin: new Date("2022-06-01 00:00:00")
+    // }));
 
     // pool.runTask(new WorkerTaskInfo(TaskKeyId.FP_QUERY_01, {
     //     keyWord:"",

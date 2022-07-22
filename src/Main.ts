@@ -1,5 +1,5 @@
 import {pmsClient} from "./@utils/Utils.js";
-import {main} from "./MultiThreads.js";
+import {main} from "./@pool/MultiThreads.js";
 import {logInit, LogLevel, printLogSync} from "./@log/Log4js.js";
 
 logInit();
