@@ -1,6 +1,6 @@
-import {chromium, Page} from "@playwright/test"
+import {BrowserContext, chromium, Page} from "@playwright/test"
 import {Locator, Request, Route} from "playwright-core";
-import {FpCelebrityDetailEntry, FpCelebrityListEntry, UrlType} from "./@entry/FpEntryPo.js";
+import {FpCelebrityDetailEntry, FpCelebrityListEntry, FpEntry, UrlType} from "./@entry/FpEntryPo.js";
 import {LogLevel, printLogSync} from "./@log/Log4js.js";
 import {fpCreateWithCheckExist} from "./@utils/PsDbUtils.js";
 
@@ -32,10 +32,11 @@ async function getAttributeFromLoc(locator: Locator, key: string) {
 /**
  * 返回下一页的地址
  * @param celebrityList
- * @param page
+ * @param context
  * @param celebrityUrl
  */
-async function getSinglePageList(celebrityList: FpCelebrityListEntry[], page: Page, celebrityUrl: string) {
+async function getSinglePageList(celebrityList: FpCelebrityListEntry[], context: BrowserContext, celebrityUrl: string) {
+    const page = await context.newPage();
     await page.route(new RegExp("(\.png)|(\.jpg)", "g"), (route: Route, request: Request) => {
         console.log(`jump url: ${request.url()}`);
         route.abort();
@@ -99,65 +100,16 @@ async function getSinglePageList(celebrityList: FpCelebrityListEntry[], page: Pa
         }
     }
 
+    await page.close();
     return nextPage;
 }
 
-(async () => {
-    const browser = await chromium.launch({headless: false, slowMo: 100, timeout: 300000, downloadsPath: 'E:\\cache'});
-    // Create a new incognito browser context.
-    const context = await browser.newContext();
-    // Create a new page in a pristine context.
-    const page = await context.newPage();
-
-    // //TODO
-    // await page.goto('https://thefappening.pro/all-actresses-list/');
-    //
-    // const locator = await page.locator('.letter-section > ul > li a');
-    // const count = await locator.count();
-    // console.log(`fp all count:${count}`);
-    //
-    // let fpList: FpEntry[] = [];
-    // for (let i = 0; i < count; ++i) {
-    //     // let locatorInner = await locator.nth(i);
-    //     let href = await locator.nth(i).getAttribute('href');
-    //     let name = await locator.nth(i).textContent();
-    //
-    //     if (href === null || name === null) {
-    //         continue;
-    //     }
-    //
-    //     await console.log(`index:${i}, att:${href.trim()}, name:${name.trim()}`);
-    //
-    //     fpList.push({
-    //         name: name.trim(),
-    //         url: href.trim()
-    //     })
-    // }
-    // for (const entry of fpList) {
-    //     // 访问新页面
-    //     const subPage = await context.newPage();
-    //     await subPage.goto(entry.url);
-    // }
-
-    // TODO
-    let celebrityList: FpCelebrityListEntry[] = [];
-    let celebritySinglePage = 'https://thefappening.pro/megan-fox/';
-    while (celebritySinglePage !== '') {
-        let nextPage = await getSinglePageList(celebrityList, page, celebritySinglePage);
-        if (nextPage === null || nextPage === undefined || nextPage === '') {
-            celebritySinglePage = ''
-            continue;
-        }
-        celebritySinglePage = nextPage.trim();
-    }
-    await page.close()
-
-
+async function findCelebrityDetails(celebrityList: FpCelebrityListEntry[], context: BrowserContext) {
     for (let entry of celebrityList) {
         await console.log(`---------------------------------------`);
-        let fpPicList: FpCelebrityDetailEntry[] = [];
+        let fpResourceList: FpCelebrityDetailEntry[] = [];
         let page = await context.newPage();
-        await page.route(new RegExp("(\.png)|(\.jpg)", "g"), (route: Route, request: Request) => {
+        await page.route(new RegExp("(\.png)|(\.jpg)|(\.mp4)|(\.avi)", "g"), (route: Route, request: Request) => {
             console.log(`jump url: ${request.url()}`);
             route.abort();
         })
@@ -173,7 +125,7 @@ async function getSinglePageList(celebrityList: FpCelebrityListEntry[], page: Pa
             `;
         }
 
-        fpPicList.push({
+        fpResourceList.push({
             postId: entry.postId,
             name: entry.name,
             title: entry.title,
@@ -184,16 +136,16 @@ async function getSinglePageList(celebrityList: FpCelebrityListEntry[], page: Pa
             createdTime: entry.createdTime,
         });
 
-        //
-        let fpPicListTemp: FpCelebrityDetailEntry[] = [];
+        //找到所有图片
+        let fpResourceListTemp: FpCelebrityDetailEntry[] = [];
         let locatorImages = await articleLoc.nth(0).locator('div > p img');
         const countImages = await locatorImages.count();
         for (let j = 0; j < countImages; ++j) {
             let nextUrlLoc = await locatorImages.nth(j).getAttribute('src');
-            if (nextUrlLoc === null || fpPicListTemp.some(value => value.url === nextUrlLoc)) {
+            if (nextUrlLoc === null || fpResourceListTemp.some(value => value.url === nextUrlLoc)) {
                 continue;
             }
-            fpPicListTemp.push({
+            fpResourceListTemp.push({
                 postId: entry.postId,
                 name: entry.name,
                 title: entry.title,
@@ -204,16 +156,92 @@ async function getSinglePageList(celebrityList: FpCelebrityListEntry[], page: Pa
                 createdTime: entry.createdTime,
             });
         }
-        fpPicList = fpPicList.concat(fpPicListTemp);
+
+        //找到所有视频
+        let locatorVideo = await articleLoc.nth(0).locator('div > div > video > source');
+        const videoCount = await locatorVideo.count();
+        for (let j = 0; j < videoCount; ++j) {
+            let videoLink = await locatorVideo.nth(j).getAttribute("src");
+            if (videoLink === null || videoLink === undefined) {
+                continue;
+            }
+
+            fpResourceListTemp.push({
+                postId: entry.postId,
+                name: entry.name,
+                title: entry.title,
+                url: videoLink.trim(),
+                urlType: UrlType.VIDEO,
+                summary: '',
+                detail: '',
+                createdTime: entry.createdTime,
+            });
+        }
+
+        fpResourceList = fpResourceList.concat(fpResourceListTemp);
         await page.close()
         await console.log(`---------------------------------------`);
 
         // 写入数据表
-        for(let value of fpPicList) {
+        for (let value of fpResourceList) {
             await fpCreateWithCheckExist(value);
         }
     }
+}
 
+async function findListByLetterPrefix(page: Page, key: string) {
+    const locator = await page.locator(`#letter-${key} a`);
+    const count = await locator.count();
+    console.log(`fp all count:${count}`);
+
+    let fpList: FpEntry[] = [];
+    for (let i = 0; i < count; ++i) {
+        let href = await locator.nth(i).getAttribute('href');
+        let name = await locator.nth(i).textContent();
+        if (href === null || name === null) {
+            continue;
+        }
+
+        console.log(`index:${i}, att:${href.trim()}, name:${name.trim()}`);
+
+        fpList.push({
+            name: name.trim(),
+            url: href.trim()
+        })
+    }
+    return fpList;
+}
+
+(async () => {
+    const browser = await chromium.launch({headless: false, slowMo: 100, timeout: 300000, downloadsPath: 'E:\\cache'});
+    // Create a new incognito browser context.
+    const context = await browser.newContext();
+    // Create a new page in a pristine context.
+    const page = await context.newPage();
+    await page.goto('https://thefappening.pro/all-actresses-list/',{
+        timeout: 300000,
+    });
+    const TABLE = Array.from(Array(26), (i, k) => String.fromCharCode(k + 65))
+    for (let key of TABLE) {
+        let fpList = await findListByLetterPrefix(page, key);
+
+        // 找到单个人文章列表
+        for (const entry of fpList) {
+            let celebrityList: FpCelebrityListEntry[] = [];
+            let celebritySingleUrl = entry.url;
+            while (celebritySingleUrl !== '') {
+                let nextPage = await getSinglePageList(celebrityList, context, celebritySingleUrl);
+                if (nextPage === null || nextPage === undefined || nextPage === '') {
+                    celebritySingleUrl = ''
+                    continue;
+                }
+                celebritySingleUrl = nextPage.trim();
+            }
+
+            await findCelebrityDetails(celebrityList, context);
+        }
+    }
+    await page.close()
 
 
     // const texts2 = await locator.evaluateAll(list => list.map(element => element.textContent));

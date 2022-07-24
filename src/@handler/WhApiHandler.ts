@@ -23,8 +23,8 @@ export async function whSearchListLatest(queryParam: QueryParam) {
         queryParam.sinceEnd = new Date();
     }
 
-    if (queryParam.category ===null) {
-        queryParam.category='111';
+    if (queryParam.category === null) {
+        queryParam.category = '111';
     }
 
     let endpoint = getApiEndpoint(queryParam.apiId);
@@ -56,6 +56,7 @@ export async function whSearchListLatest(queryParam: QueryParam) {
         }
 
         // write to db
+        let imgExistCount = 0;
         for (const entry of imagePoList) {
             // check exist or not
             if (await pmsCreateWithCheckExist(entry)) {
@@ -71,8 +72,16 @@ export async function whSearchListLatest(queryParam: QueryParam) {
                     extName: getExtName(entry.file_type),
                     isUsed: ImgDownloadStatus.UN_DOWNLOADED,
                 });
+            } else {
+                ++imgExistCount;
             }
         }
+
+        if (imgExistCount === imagePoList.length) {
+            printLogSync(LogLevel.INFO, `latest images have handled, no need to continue...`)
+            break;
+        }
+
         printLogSync(LogLevel.INFO, `images latest search, current page:${page}, purity:${queryParam.purity},category:${queryParam.category}`);
         await delay(randomInt(1000, 3000));
     }
