@@ -5,6 +5,8 @@ import {fpCreateWithCheckArticleExist, fpGetArticleList, updateArticleUsed} from
 import {ALPHABET_TABLE, findCelebrityDetails} from "./FpUtils.js";
 import {FP_LIST_URL} from "./FpConstant.js";
 import {LogLevel, printLogSync} from "../@log/Log4js.js";
+import {randomInt} from "crypto";
+import {delay} from "../@utils/Utils.js";
 
 
 async function findCelebritiesListByLetterPrefix(page: Page, key: string) {
@@ -145,7 +147,6 @@ async function judgeContextExistOrNot(page: Page, selector: string) {
     const locName = await page.locator(selector);
     let name = await locName.textContent()
     return name === null || name.includes('Nothing Found');
-
 }
 
 export async function FpArticleList() {
@@ -187,6 +188,7 @@ export async function FpArticleList() {
                     console.log(`entry postId:${val.postId}, url:${val.url} exist, continue....`);
                 }
             }
+            await delay(randomInt(1000, 2000));
         }
     }
     await page.close();

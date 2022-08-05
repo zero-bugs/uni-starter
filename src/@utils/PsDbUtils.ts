@@ -57,11 +57,25 @@ export async function fpGetArticleList() {
     return entryList;
 }
 
+export async function fpCheckArticleExist(postId: string) {
+    return pmsClient.articleTbl.findFirst({
+        take: 1,
+        where: {
+            AND: [
+                {postId: postId},
+                {isUsed: IsUsedStatus.UN_USED}
+            ]
+        }
+    });
+}
+
 export async function fpCreateWithCheckArticleExist(fpEntry: FpCelebrityDetailEntry): Promise<boolean> {
     const count = await pmsClient.articleTbl.count({
         where: {
-            postId: fpEntry.postId,
-            url: fpEntry.url,
+            AND: [
+                {postId: fpEntry.postId},
+                {url: fpEntry.url}
+            ]
         }
     });
 
