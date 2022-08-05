@@ -12,7 +12,7 @@ import {getApiEndpoint, getFetchType, getPicOutputPath} from "../config/ConfigFi
 
 import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
 import {downloadSingleImage} from "./dwlImgsHandler.js";
-import {ImgDownloadStatus} from "../@entry/ImgDownloadStatus.js";
+import {IsUsedStatus} from "../@entry/IsUsedStatus.js";
 
 
 export async function whSearchListLatest(queryParam: QueryParam) {
@@ -70,7 +70,7 @@ export async function whSearchListLatest(queryParam: QueryParam) {
                     rootPath: `${getPicOutputPath()}/${getFetchType()}`,
                     url: entry.path,
                     extName: getExtName(entry.file_type),
-                    isUsed: ImgDownloadStatus.UN_DOWNLOADED,
+                    isUsed: IsUsedStatus.UN_USED,
                 });
             } else {
                 ++imgExistCount;

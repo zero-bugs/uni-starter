@@ -15,9 +15,9 @@ export type FpCelebrityListEntry = {
 export type FpCelebrityDetailEntry = {
     postId: string;
     name: string;
-    title: string;
+    title: string | null;
     url: string | undefined | null;
-    urlType: string;
+    urlType: string | null;
     summary: string | null;
     detail: string | null;
     createdTime: Date;
@@ -25,6 +25,6 @@ export type FpCelebrityDetailEntry = {
 
 export enum UrlType {
     IMG = "img",
-    VIDEO = "vdo",
-    TEXT = "txt",
+    VIDEO = "video",
+    ARTICLE = "article",
 }

@@ -1,8 +1,94 @@
 import {ImgEntryPo} from "../@entry/ImgEntryPo.js";
 import {pmsClient} from "./Utils.js";
-import {ImgDownloadStatus} from "../@entry/ImgDownloadStatus.js";
+import {IsUsedStatus} from "../@entry/IsUsedStatus.js";
 import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import {FpCelebrityDetailEntry} from "../@entry/FpEntryPo.js";
+import {ArticleTbl} from "@prisma/client";
+
+
+export async function updateArticleUsed(id: number) {
+    return pmsClient.articleTbl.update({
+        where: {
+            id: id
+        },
+        data: {
+            isUsed: IsUsedStatus.USED,
+        }
+    });
+}
+
+export async function fpGetArticleList() {
+    const entryList: ArticleTbl[] = [];
+    const entry = await pmsClient.articleTbl.findFirst({
+            take: 1,
+            where: {
+                isUsed: IsUsedStatus.UN_USED,
+            },
+            orderBy: {
+                createAt: 'desc',
+            }
+        }
+    );
+    if (entry === null || entry === undefined) {
+        return entryList;
+    }
+
+    entryList.push(entry);
+
+    let tempEntryList: ArticleTbl[] = [];
+    tempEntryList.push(entry);
+    while (tempEntryList) {
+        tempEntryList = await pmsClient.articleTbl.findMany({
+                take: 1000,
+                skip: 1,
+                cursor: {
+                    id: entry.id,
+                },
+                where: {
+                    isUsed: IsUsedStatus.UN_USED,
+                },
+                orderBy: {
+                    createAt: 'desc',
+                }
+            }
+        );
+        tempEntryList?.forEach(value => entryList.push(value));
+    }
+    return entryList;
+}
+
+export async function fpCreateWithCheckArticleExist(fpEntry: FpCelebrityDetailEntry): Promise<boolean> {
+    const count = await pmsClient.articleTbl.count({
+        where: {
+            postId: fpEntry.postId,
+            url: fpEntry.url,
+        }
+    });
+
+    if (count !== 0) {
+        return false;
+    }
+
+    try {
+        await pmsClient.articleTbl.create({
+            data: {
+                postId: fpEntry.postId,
+                name: fpEntry.name,
+                title: fpEntry.title,
+                url: fpEntry.url,
+                urlType: fpEntry.urlType,
+                summary: fpEntry.summary,
+                detail: fpEntry.detail,
+                isUsed: IsUsedStatus.UN_USED,
+                createdTime: new Date(fpEntry.createdTime)
+            }
+        });
+    } catch (e) {
+        printLogSync(LogLevel.INFO, `create new article entry failed, error:${e}, entry:${fpEntry}`);
+    }
+
+    return true;
+}
 
 
 export async function fpCreateWithCheckExist(fpEntry: FpCelebrityDetailEntry): Promise<boolean> {
@@ -27,7 +113,7 @@ export async function fpCreateWithCheckExist(fpEntry: FpCelebrityDetailEntry): P
                 urlType: fpEntry.urlType,
                 summary: fpEntry.summary,
                 detail: fpEntry.detail,
-                isUsed: ImgDownloadStatus.UN_DOWNLOADED,
+                isUsed: IsUsedStatus.UN_USED,
                 createdTime: new Date(fpEntry.createdTime)
             }
         });
@@ -69,7 +155,7 @@ export async function pmsCreateWithCheckExist(entry: ImgEntryPo): Promise<boolea
                 views: entry.views,
                 favorites: entry.favorites,
                 ratio: entry.ratio,
-                isUsed: ImgDownloadStatus.UN_DOWNLOADED,
+                isUsed: IsUsedStatus.UN_USED,
                 createdTime: new Date(entry.created_at),
             }
         });

@@ -10,7 +10,7 @@ async function getTextFromPage(page: Page, selector: string) {
     if (name === null) {
         return "";
     }
-    return name.trim();
+    return new TextDecoder().decode(new TextEncoder().encode(name)).trim();
 }
 
 async function getTextFromLoc(locator: Locator) {
@@ -29,6 +29,13 @@ async function getAttributeFromLoc(locator: Locator, key: string) {
     return postId.trim();
 }
 
+async function judgeContextExistOrNot(page: Page, selector: string) {
+    const locName = await page.locator(selector);
+    let name = await locName.textContent()
+    return name === null || name.includes('Nothing Found');
+
+}
+
 /**
  * 返回下一页的地址
  * @param celebrityList
@@ -41,9 +48,16 @@ async function getSinglePageList(celebrityList: FpCelebrityListEntry[], context:
         console.log(`jump url: ${request.url()}`);
         route.abort();
     })
-    await page.goto(celebrityUrl, {
-        timeout: 300000
+    await page.goto(`${celebrityUrl}`, {
+        timeout: 0
     });
+
+    // 判断内容是否存在，有可能详情页面不含有内容
+    if (await judgeContextExistOrNot(page, '#content')) {
+        await page.close();
+        return null;
+    }
+
 
     // 获取Name
     const name = await getTextFromPage(page, '#content > header > h1 > span');
@@ -93,7 +107,8 @@ async function getSinglePageList(celebrityList: FpCelebrityListEntry[], context:
 
     const locatorNav = await page.locator('#content > nav > .nav-previous > a');
     let nextPage;
-    if ((await locatorNav.count() >= 1)) {
+    const navCount = await locatorNav.count();
+    if ((navCount >= 1)) {
         let pageContent = await locatorNav.textContent();
         if (pageContent !== null && pageContent.trim().includes("Older posts")) {
             nextPage = await locatorNav.getAttribute('href')
@@ -105,18 +120,27 @@ async function getSinglePageList(celebrityList: FpCelebrityListEntry[], context:
 }
 
 async function findCelebrityDetails(celebrityList: FpCelebrityListEntry[], context: BrowserContext) {
+    if (celebrityList.length == 0) {
+        return;
+    }
+    let curPage = await context.newPage();
     for (let entry of celebrityList) {
+        // if (entry.url !== 'https://thefappening.pro/alexis-ren-nude-by-marco-glaviano-55-bts-photos/') {
+        //     continue;
+        // }
+
         await console.log(`---------------------------------------`);
         let fpResourceList: FpCelebrityDetailEntry[] = [];
-        let page = await context.newPage();
-        await page.route(new RegExp("(\.png)|(\.jpg)|(\.mp4)|(\.avi)", "g"), (route: Route, request: Request) => {
+
+        await curPage.route(new RegExp("(\.png)|(\.jpg)", "g"), (route: Route, request: Request) => {
             console.log(`jump url: ${request.url()}`);
             route.abort();
-        })
-        await page.goto(entry.url, {
-            timeout: 300000,
-        })
-        let articleLoc = await page.locator(`#${entry.postId}`)
+        });
+
+        await curPage.goto(`${entry.url}`, {
+            timeout: 0,
+        });
+        let articleLoc = await curPage.locator(`#${entry.postId}`);
         let locatorContent = await articleLoc.nth(0).locator('div > p');
         const detailCount = await locatorContent.count();
         let details = '';
@@ -130,7 +154,7 @@ async function findCelebrityDetails(celebrityList: FpCelebrityListEntry[], conte
             name: entry.name,
             title: entry.title,
             url: entry.url,
-            urlType: UrlType.TEXT,
+            urlType: UrlType.ARTICLE,
             summary: entry.summary,
             detail: details,
             createdTime: entry.createdTime,
@@ -179,7 +203,6 @@ async function findCelebrityDetails(celebrityList: FpCelebrityListEntry[], conte
         }
 
         fpResourceList = fpResourceList.concat(fpResourceListTemp);
-        await page.close()
         await console.log(`---------------------------------------`);
 
         // 写入数据表
@@ -187,6 +210,7 @@ async function findCelebrityDetails(celebrityList: FpCelebrityListEntry[], conte
             await fpCreateWithCheckExist(value);
         }
     }
+    await curPage.close()
 }
 
 async function findListByLetterPrefix(page: Page, key: string) {
@@ -213,22 +237,26 @@ async function findListByLetterPrefix(page: Page, key: string) {
 }
 
 (async () => {
-    const browser = await chromium.launch({headless: false, slowMo: 100, timeout: 300000, downloadsPath: 'E:\\cache'});
-    // Create a new incognito browser context.
-    const context = await browser.newContext();
-    // Create a new page in a pristine context.
-    const page = await context.newPage();
-    await page.goto('https://thefappening.pro/all-actresses-list/',{
-        timeout: 300000,
-    });
-    const TABLE = Array.from(Array(26), (i, k) => String.fromCharCode(k + 65))
+    const TABLE = [ 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
     for (let key of TABLE) {
+        const browser = await chromium.launch({headless: true, slowMo: 100, timeout: 0});
+        const context = await browser.newContext();
+        const page = await context.newPage();
+        await page.goto('https://thefappening.pro/all-actresses-list/', {
+            timeout: 0,
+        });
+
         let fpList = await findListByLetterPrefix(page, key);
 
         // 找到单个人文章列表
         for (const entry of fpList) {
             let celebrityList: FpCelebrityListEntry[] = [];
             let celebritySingleUrl = entry.url;
+
+            if (celebritySingleUrl < 'https://thefappening.pro/tara-booher/') {
+                continue;
+            }
+
             while (celebritySingleUrl !== '') {
                 let nextPage = await getSinglePageList(celebrityList, context, celebritySingleUrl);
                 if (nextPage === null || nextPage === undefined || nextPage === '') {
@@ -240,22 +268,7 @@ async function findListByLetterPrefix(page: Page, key: string) {
 
             await findCelebrityDetails(celebrityList, context);
         }
+
+        await page.close();
     }
-    await page.close()
-
-
-    // const texts2 = await locator.evaluateAll(list => list.map(element => element.textContent));
-    // await console.log(texts2);
-    // hrefs.forEach((href, index) => {#letter-A > ul > li:nth-child(1)
-    //     const filePath = `${reliablePath}-${index}`;
-    //     const file = fs.createWriteStream(filePath);
-    //     file.on('pipe', (src) => console.log(`${filePath} started`));
-    //     file.on('finish', (src) => console.log(`${filePath} downloaded`
-    //     https.get(href, function(response) {
-    //         response.pipe(file);
-    //     });
-    // });
-
-
-    await page.close();
 })();

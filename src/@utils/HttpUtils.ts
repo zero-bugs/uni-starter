@@ -8,7 +8,7 @@ import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import * as fs from "fs";
 import {getHttpsProxy} from "../config/ProxyConfig.js";
 import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
-import {ImgDownloadStatus} from "../@entry/ImgDownloadStatus.js";
+import {IsUsedStatus} from "../@entry/IsUsedStatus.js";
 
 const maxRetryCount = 3;
 
@@ -79,7 +79,7 @@ function getNormalizeMonth(param: DownloadParams) {
 
 export async function fetchImgWithRetry(options: RequestInit, param: DownloadParams) {
     // 判断是否下载过
-    if (param.isUsed !== ImgDownloadStatus.UN_DOWNLOADED) {
+    if (param.isUsed !== IsUsedStatus.UN_USED) {
         return false;
     }
 
@@ -106,7 +106,7 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
         await pmsClient.image.update({
             where: {imgId: param.imgId},
             data: {
-                isUsed: ImgDownloadStatus.DOWNLOADED,
+                isUsed: IsUsedStatus.USED,
             }
         });
         return false;
@@ -127,7 +127,7 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
                 await pmsClient.image.update({
                     where: {imgId: param.imgId},
                     data: {
-                        isUsed: ImgDownloadStatus.NOT_EXIST,
+                        isUsed: IsUsedStatus.NOT_EXIST,
                     }
                 });
 
@@ -156,7 +156,7 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
             await pmsClient.image.update({
                 where: {imgId: param.imgId},
                 data: {
-                    isUsed: ImgDownloadStatus.DOWNLOADED,
+                    isUsed: IsUsedStatus.USED,
                 }
             });
 

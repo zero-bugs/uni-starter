@@ -74,3 +74,19 @@ model FappeningTbl {
   createAt    DateTime @default(now())
   updateAt    DateTime @updatedAt
 }
+
+
+model ArticleTbl {
+  id          Int      @id @default(autoincrement())
+  postId      String?
+  name        String?
+  title       String?
+  url         String?
+  urlType     String?
+  summary     String?
+  detail      String?
+  isUsed      Int?
+  createdTime DateTime
+  createAt    DateTime @default(now())
+  updateAt    DateTime @updatedAt
+}
