@@ -1,1 +1,3 @@
-export const FP_LIST_URL = 'https://thefappening.pro/all-actresses-list/';
+import {getFpAddress} from "../config/ConfigFile.js";
+
+export const FP_LIST_URL = `${getFpAddress()}/all-actresses-list/`;

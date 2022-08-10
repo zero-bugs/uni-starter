@@ -3,6 +3,7 @@
     "basic": {
       "host": "thefappening.pro",
       "protocol": "https"
-    }
+    },
+    "picOutputPath": "E:\\temp"
   }
 }

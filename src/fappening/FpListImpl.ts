@@ -1,12 +1,20 @@
 import {BrowserContext, chromium, Page} from "@playwright/test"
 import {Locator, Request, Route} from "playwright-core";
 import {FpCelebrityDetailEntry, FpCelebrityListEntry, FpEntry, UrlType} from "../@entry/FpEntryPo.js";
-import {fpCreateWithCheckArticleExist, fpGetArticleList, updateArticleUsed} from "../@utils/PsDbUtils.js";
+import {
+    fpCheckArticleExist,
+    fpCreateWithCheckArticleExist,
+    fpGetArticleList, fpGetPictureList,
+    updateArticleUsed
+} from "../@utils/PsDbUtils.js";
 import {ALPHABET_TABLE, findCelebrityDetails} from "./FpUtils.js";
 import {FP_LIST_URL} from "./FpConstant.js";
 import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import {randomInt} from "crypto";
 import {delay} from "../@utils/Utils.js";
+import {FappeningTbl} from "@prisma/client";
+import {fetchFpImgWithRetry} from "../@utils/HttpUtils.js";
+import {RequestInit} from "node-fetch";
 
 
 async function findCelebritiesListByLetterPrefix(page: Page, key: string) {
@@ -48,7 +56,7 @@ async function getCelebrityArticlesList(celebrityList: FpCelebrityListEntry[], c
         route.abort();
     })
     await page.goto(`${celebrityUrl}`, {
-        timeout: 0
+        timeout: 600000
     });
 
     // 判断内容是否存在，有可能详情页面不含有内容
@@ -150,11 +158,11 @@ async function judgeContextExistOrNot(page: Page, selector: string) {
 }
 
 export async function FpArticleList() {
-    const browser = await chromium.launch({headless: true, slowMo: 100, timeout: 0});
+    const browser = await chromium.launch({headless: true, slowMo: 100, timeout: 600000});
     const context = await browser.newContext();
     const page = await context.newPage();
     await page.goto(FP_LIST_URL, {
-        timeout: 0,
+        timeout: 600000,
     });
 
     for (let key of ALPHABET_TABLE) {
@@ -162,6 +170,11 @@ export async function FpArticleList() {
 
         // 找到单个人文章列表
         for (const entry of fpList) {
+
+            // if (entry.url ===null|| entry.url < 'https://thefappening.pro/zahara-davis/') {
+            //     continue;
+            // }
+
             let celebrityList: FpCelebrityListEntry[] = [];
             let celebritySingleUrl = entry.url;
             while (celebritySingleUrl !== '') {
@@ -202,8 +215,7 @@ export async function FpArticleDetailsList() {
         return;
     }
 
-
-    const browser = await chromium.launch({headless: false, slowMo: 100, timeout: 0});
+    const browser = await chromium.launch({headless: false, slowMo: 100, timeout: 600000});
     const context = await browser.newContext();
 
     for (let article of articleList) {
@@ -211,6 +223,12 @@ export async function FpArticleDetailsList() {
             printLogSync(LogLevel.CONSOLE, `postId or name is null...`)
             continue;
         }
+
+        if ((await fpCheckArticleExist(article.postId)) === null) {
+            printLogSync(LogLevel.CONSOLE, `article:${article.postId} has been handled...`)
+            continue;
+        }
+
         let celebrityList: FpCelebrityDetailEntry[] = [];
         celebrityList.push({
             postId: article?.postId,
@@ -228,4 +246,12 @@ export async function FpArticleDetailsList() {
         printLogSync(LogLevel.CONSOLE, `update result ${count} for url:${article.url}, name:${article.name}`)
     }
     await browser.close();
+}
+
+export async function FpArticleDownload() {
+    const entryList: FappeningTbl[] = await fpGetPictureList();
+    for (let entry of entryList) {
+        let options: RequestInit = {};
+        await fetchFpImgWithRetry(options, entry);
+    }
 }

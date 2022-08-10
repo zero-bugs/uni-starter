@@ -1,4 +1,4 @@
-type DownloadEntryPo = {
+export type DownloadEntryPo = {
     category: string;
     purity: string;
     start: number;
@@ -9,7 +9,7 @@ type DownloadEntryPo = {
 }
 
 
-type DownloadParams = {
+export type DownloadParams = {
     category: string;
     purity: string;
     imgId: string;
@@ -19,5 +19,5 @@ type DownloadParams = {
     rootPath: string;
     url: string;
     extName: string;
-    isUsed: number|null;
+    isUsed: number | null;
 }

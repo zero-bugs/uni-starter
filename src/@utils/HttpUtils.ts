@@ -3,12 +3,16 @@ import {randomInt} from "crypto";
 import {parentPort, threadId} from "worker_threads";
 
 import {ImgEntryPo, ResImgEntryPo} from "../@entry/ImgEntryPo.js";
+import {DownloadParams} from "../@entry/DownloadEntryPo.js";
+import {QueryParam} from "../@entry/QueryPo.js";
 import {delay, pmsClient} from "./Utils.js";
 import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import * as fs from "fs";
 import {getHttpsProxy} from "../config/ProxyConfig.js";
 import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
 import {IsUsedStatus} from "../@entry/IsUsedStatus.js";
+import {FappeningTbl} from "@prisma/client";
+import {getFpOutPath} from "../config/ConfigFile.js";
 
 const maxRetryCount = 3;
 
@@ -172,4 +176,100 @@ export async function fetchImgWithRetry(options: RequestInit, param: DownloadPar
             clearTimeout(timeout);
         }
     }
+}
+
+export async function fetchFpImgWithRetry(options: RequestInit, param: FappeningTbl) {
+    // 判断是否下载过
+    if (param.isUsed !== IsUsedStatus.UN_USED) {
+        return false;
+    }
+
+    let proxy = getHttpsProxy();
+    if (proxy) {
+        options.agent = getHttpsProxy();
+    }
+
+    // 目录考虑时间，判断目录是否存在
+    let dldPath = `${getFpOutPath()}/${param.name}/${param.title}`
+    if (!fs.existsSync(dldPath)) {
+        fs.mkdirSync(dldPath, {recursive: true});
+    }
+
+    // 判断文件是否存在
+    let imgNameArr = param.url?.trim().split('/');
+    if (param.url === null || imgNameArr === undefined || imgNameArr === null) {
+        printLogSync(LogLevel.ERROR, `obtain image name failed for url:${param.url}`);
+        return false;
+    }
+    let imgName = `${dldPath}/${imgNameArr[imgNameArr.length - 1]}`;
+    if (fs.existsSync(imgName)) {
+        await pmsClient.fappeningTbl.update({
+            where: {id: param.id},
+            data: {
+                isUsed: IsUsedStatus.USED,
+            }
+        });
+        return false;
+    }
+
+    let retry = 0;
+    while (retry < maxRetryCount) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => {
+            controller.abort();
+        }, 300000);
+        options.signal = controller.signal;
+
+        try {
+            printLogSync(LogLevel.INFO, `begin to download img, url:${param.url}`);
+            const response = await fetch(param.url, options);
+            if (response.status === 404) {
+                await pmsClient.fappeningTbl.update({
+                    where: {id: param.id},
+                    data: {
+                        isUsed: IsUsedStatus.NOT_EXIST,
+                    }
+                });
+
+                printLogSync(LogLevel.INFO, `image not exist, url:${param.url}, response:${response.status}, ${await response.text()}`);
+                break;
+            }
+            if (response.status !== 200 && response.status !== 201) {
+                printLogSync(LogLevel.INFO, `worker execute download failed url:${param.url}, response:${response.status}, ${await response.text()}`);
+                ++retry;
+                continue;
+            }
+
+            printLogSync(LogLevel.INFO, `begin to write img: postId:${param.postId}, name:${param.name}, title:${param.title}`);
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
+            fs.appendFile(imgName, buffer, (err) => {
+                if (err) {
+                    printLogSync(LogLevel.CONSOLE, `image:${imgName} write local failed, err:${err}`);
+                } else {
+                    printLogSync(LogLevel.CONSOLE, `image:${imgName} write local success`);
+                }
+            });
+
+            await pmsClient.fappeningTbl.update({
+                where: {id: param.id},
+                data: {
+                    isUsed: IsUsedStatus.USED,
+                }
+            });
+
+            return true;
+        } catch (error) {
+            printLogSync(LogLevel.ERROR, `http failed, type:${typeof error}, retry:${retry}, error msg:${error}`);
+            ++retry;
+            if (retry === maxRetryCount) {
+                printLogSync(LogLevel.ERROR, `http request failed count has reached max, url:${param.url}`);
+            }
+            await delay(randomInt(2000, 4000));
+        } finally {
+            clearTimeout(timeout);
+        }
+    }
+    return false;
 }

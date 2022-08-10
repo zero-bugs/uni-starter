@@ -9,9 +9,9 @@ export enum PicLibType {
 }
 
 export enum TaskKeyId {
-    WH_QUERY_ALL_01 = "WH_QUERY_ALL_01",
-    WH_QUERY_02 = "WH_QUERY_02", //下载最新
-    WH_QUERY_03 = "WH_QUERY_03",
+    WH_QUERY_ALL_01 = "WH_QUERY_ALL_01", // search all
+    WH_QUERY_02 = "WH_QUERY_02", // search latest
+    WH_QUERY_03 = "WH_QUERY_03", // search hottest
     WH_QUERY_04 = "WH_QUERY_04",
     WH_DOWNLOAD_ALL_01 = "WH_DOWNLOAD_ALL_01",
     WH_DOWNLOAD_ONE_01 = 'WH_DOWNLOAD_ONE_01',
@@ -71,7 +71,11 @@ export const pwConfigList = JSON.parse(
 );
 
 
-export function getPwAddress(type:string): string {
+export function getFpAddress(type:string = 'fp'): string {
     let basicObj = pwConfigList[type].basic;
     return `${basicObj.protocol}://${basicObj.host}`;
+}
+
+export function getFpOutPath(type:string = 'fp'): string {
+    return `${pwConfigList[type].picOutputPath}/${type}`;
 }

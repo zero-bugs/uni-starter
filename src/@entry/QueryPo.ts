@@ -1,4 +1,4 @@
-type QueryParam = {
+export type QueryParam = {
     purity: string;
     category: string;
     apikey: string;

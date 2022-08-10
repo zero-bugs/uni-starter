@@ -1,6 +1,7 @@
-import {FpArticleDetailsList, FpArticleList} from "./fappening/FpListImpl.js";
+import {FpArticleDetailsList, FpArticleDownload, FpArticleList} from "./fappening/FpListImpl.js";
 
 (async () => {
-    await FpArticleList();
-    await FpArticleDetailsList();
+    // await FpArticleList();
+    // await FpArticleDetailsList();
+    await FpArticleDownload();
 })();

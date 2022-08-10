@@ -2,8 +2,8 @@ import {ImgEntryPo} from "../@entry/ImgEntryPo.js";
 import {pmsClient} from "./Utils.js";
 import {IsUsedStatus} from "../@entry/IsUsedStatus.js";
 import {LogLevel, printLogSync} from "../@log/Log4js.js";
-import {FpCelebrityDetailEntry} from "../@entry/FpEntryPo.js";
-import {ArticleTbl} from "@prisma/client";
+import {FpCelebrityDetailEntry, UrlType} from "../@entry/FpEntryPo.js";
+import {ArticleTbl, FappeningTbl} from "@prisma/client";
 
 
 export async function updateArticleUsed(id: number) {
@@ -17,6 +17,67 @@ export async function updateArticleUsed(id: number) {
     });
 }
 
+export async function fpGetPictureList() {
+    const entryList: FappeningTbl[] = [];
+    const entry = await pmsClient.fappeningTbl.findFirst({
+            take: 1,
+            where: {
+                isUsed: IsUsedStatus.UN_USED,
+                AND: [
+                    {
+                        urlType: {
+                            in: [UrlType.IMG, UrlType.VIDEO]
+                        }
+                    }
+                ]
+            },
+            orderBy: {
+                createAt: 'asc',
+            }
+        }
+    );
+    if (entry === null || entry === undefined) {
+        return entryList;
+    }
+
+    entryList.push(entry);
+
+    let tempEntryList: FappeningTbl[] = [];
+    tempEntryList.push(entry);
+    let cursorId = entry.id;
+    while (true) {
+        tempEntryList = await pmsClient.fappeningTbl.findMany({
+                take: 2000,
+                skip: 1,
+                cursor: {
+                    id: cursorId,
+                },
+                where: {
+                    isUsed: IsUsedStatus.UN_USED,
+                    AND: [
+                        {
+                            urlType: {
+                                in: [UrlType.IMG, UrlType.VIDEO]
+                            }
+                        }
+                    ]
+                },
+                orderBy: {
+                    createAt: 'asc',
+                }
+            }
+        );
+
+        if (tempEntryList === null || tempEntryList.length === 0) {
+            break;
+        }
+
+        tempEntryList.forEach(value => entryList.push(value));
+        cursorId = tempEntryList[tempEntryList.length - 1].id;
+    }
+    return entryList;
+}
+
 export async function fpGetArticleList() {
     const entryList: ArticleTbl[] = [];
     const entry = await pmsClient.articleTbl.findFirst({
@@ -25,7 +86,7 @@ export async function fpGetArticleList() {
                 isUsed: IsUsedStatus.UN_USED,
             },
             orderBy: {
-                createAt: 'desc',
+                createAt: 'asc',
             }
         }
     );
@@ -37,25 +98,46 @@ export async function fpGetArticleList() {
 
     let tempEntryList: ArticleTbl[] = [];
     tempEntryList.push(entry);
-    while (tempEntryList) {
+    let cursorId = entry.id;
+    while (true) {
         tempEntryList = await pmsClient.articleTbl.findMany({
-                take: 1000,
+                take: 2000,
                 skip: 1,
                 cursor: {
-                    id: entry.id,
+                    id: cursorId,
                 },
                 where: {
                     isUsed: IsUsedStatus.UN_USED,
                 },
                 orderBy: {
-                    createAt: 'desc',
+                    createAt: 'asc',
                 }
             }
         );
-        tempEntryList?.forEach(value => entryList.push(value));
+
+        if (tempEntryList === null || tempEntryList.length === 0) {
+            break;
+        }
+
+        tempEntryList.forEach(value => entryList.push(value));
+        cursorId = tempEntryList[tempEntryList.length - 1].id;
     }
     return entryList;
 }
+
+
+export async function fpCheckFpTblExist(postId: string) {
+    return pmsClient.fappeningTbl.findFirst({
+        take: 1,
+        where: {
+            AND: [
+                {postId: postId},
+                {isUsed: IsUsedStatus.UN_USED}
+            ]
+        }
+    });
+}
+
 
 export async function fpCheckArticleExist(postId: string) {
     return pmsClient.articleTbl.findFirst({

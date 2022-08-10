@@ -4,7 +4,7 @@ export class PostMsgEventEntry {
     msg: string;
     data: any;
 
-    constructor(id: PostMsgIdEnum, workerId:string, msg: string, data: any) {
+    constructor(id: PostMsgIdEnum, workerId: string, msg: string, data: any) {
         this.id = id;
         this.workerId = workerId;
         this.msg = msg;
