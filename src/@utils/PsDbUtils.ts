@@ -47,7 +47,7 @@ export async function fpGetPictureList() {
     let cursorId = entry.id;
     while (true) {
         tempEntryList = await pmsClient.fappeningTbl.findMany({
-                take: 2000,
+                take: 5000,
                 skip: 1,
                 cursor: {
                     id: cursorId,
@@ -74,7 +74,10 @@ export async function fpGetPictureList() {
 
         tempEntryList.forEach(value => entryList.push(value));
         cursorId = tempEntryList[tempEntryList.length - 1].id;
+
+        printLogSync(LogLevel.CONSOLE, `loading image: next cursor:${cursorId}`);
     }
+    printLogSync(LogLevel.CONSOLE, `load db completed...`)
     return entryList;
 }
 
