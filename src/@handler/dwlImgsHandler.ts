@@ -5,6 +5,7 @@ import {getHttpsProxy} from "../config/ProxyConfig.js";
 import {getFetchType, getPicOutputPath} from "../config/ConfigFile.js";
 import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import {randomInt} from "crypto";
+import {DownloadEntryPo, DownloadParams} from "../@entry/DownloadEntryPo.js";
 
 export async function downloadSingleImage(param: DownloadParams) {
     let options: RequestInit = {};

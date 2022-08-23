@@ -13,6 +13,7 @@ import {getApiEndpoint, getFetchType, getPicOutputPath} from "../config/ConfigFi
 import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
 import {downloadSingleImage} from "./dwlImgsHandler.js";
 import {IsUsedStatus} from "../@entry/IsUsedStatus.js";
+import {QueryParam} from "../@entry/QueryPo.js";
 
 
 export async function whSearchListLatest(queryParam: QueryParam) {

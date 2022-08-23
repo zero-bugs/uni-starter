@@ -3,8 +3,6 @@ import {randomInt} from "crypto";
 import {parentPort, threadId} from "worker_threads";
 
 import {ImgEntryPo, ResImgEntryPo} from "../@entry/ImgEntryPo.js";
-import {DownloadParams} from "../@entry/DownloadEntryPo.js";
-import {QueryParam} from "../@entry/QueryPo.js";
 import {delay, pmsClient} from "./Utils.js";
 import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import * as fs from "fs";
@@ -13,6 +11,8 @@ import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
 import {IsUsedStatus} from "../@entry/IsUsedStatus.js";
 import {FappeningTbl} from "@prisma/client";
 import {getFpOutPath} from "../config/ConfigFile.js";
+import {DownloadParams} from "../@entry/DownloadEntryPo.js";
+import {QueryParam} from "../@entry/QueryPo.js";
 
 const maxRetryCount = 3;
 
@@ -188,16 +188,20 @@ export async function fetchFpImgWithRetry(options: RequestInit, param: Fappening
     if (proxy) {
         options.agent = getHttpsProxy();
     }
+    if (param.url === null || param.title === null) {
+        printLogSync(LogLevel.ERROR, `url or title is null for url:${param.url}`);
+        return false;
+    }
 
     // 目录考虑时间，判断目录是否存在
-    let dldPath = `${getFpOutPath()}/${param.name}/${param.title}`
+    let dldPath = `${getFpOutPath()}/${param.name}/${param.title.replaceAll("?", "").replaceAll(":", "")}`
     if (!fs.existsSync(dldPath)) {
         fs.mkdirSync(dldPath, {recursive: true});
     }
 
     // 判断文件是否存在
     let imgNameArr = param.url?.trim().split('/');
-    if (param.url === null || imgNameArr === undefined || imgNameArr === null) {
+    if (imgNameArr === undefined || imgNameArr === null) {
         printLogSync(LogLevel.ERROR, `obtain image name failed for url:${param.url}`);
         return false;
     }
