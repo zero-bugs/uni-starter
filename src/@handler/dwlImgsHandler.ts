@@ -1,15 +1,21 @@
 import {delay, getExtName, pmsClient} from "../@utils/Utils.js";
-import {fetchImgWithRetry} from "../@utils/HttpUtils.js";
 import {RequestInit} from "node-fetch";
 import {getHttpsProxy} from "../config/ProxyConfig.js";
 import {getFetchType, getPicOutputPath} from "../config/ConfigFile.js";
 import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import {randomInt} from "crypto";
 import {DownloadEntryPo, DownloadParams} from "../@entry/DownloadEntryPo.js";
+import {fetchImgWithRetryV2} from "../@utils/HttpUtilsV2.js";
 
 export async function downloadSingleImage(param: DownloadParams) {
-    let options: RequestInit = {};
-    await fetchImgWithRetry(options, {
+    let options: RequestInit = {
+        headers: {
+            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+            'accept-encoding': 'gzip, deflate, br',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+        }
+    };
+    await fetchImgWithRetryV2(options, {
         category: param.category,
         purity: param.purity,
         imgId: String(param.imgId),
@@ -57,7 +63,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
         return;
     }
     let options: RequestInit = {};
-    await fetchImgWithRetry(options, {
+    await fetchImgWithRetryV2(options, {
         category: image.category,
         purity: image.purity,
         imgId: String(image.imgId),
@@ -119,7 +125,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
                 options.agent = getHttpsProxy();
             }
 
-            let res = await fetchImgWithRetry(options, {
+            let res = await fetchImgWithRetryV2(options, {
                 category: img.category,
                 purity: img.purity,
                 imgId: String(img.imgId),

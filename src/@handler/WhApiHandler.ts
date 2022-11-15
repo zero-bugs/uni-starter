@@ -6,7 +6,6 @@ import {ImgEntryPo} from "../@entry/ImgEntryPo.js";
 import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import {delay, getExtName} from "../@utils/Utils.js";
 
-import {fetchWithRetry} from "../@utils/HttpUtils.js";
 import {pmsCreateWithCheckExist} from "../@utils/PsDbUtils.js";
 import {getApiEndpoint, getFetchType, getPicOutputPath} from "../config/ConfigFile.js";
 
@@ -14,6 +13,7 @@ import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
 import {downloadSingleImage} from "./dwlImgsHandler.js";
 import {IsUsedStatus} from "../@entry/IsUsedStatus.js";
 import {QueryParam} from "../@entry/QueryPo.js";
+import {fetchWithRetryV2} from "../@utils/HttpUtilsV2.js";
 
 
 export async function whSearchListLatest(queryParam: QueryParam) {
@@ -35,8 +35,7 @@ export async function whSearchListLatest(queryParam: QueryParam) {
         ++page;
         let pageUrlLink = `${urlLink}&page=${page}`
 
-        let options: RequestInit = {};
-        let imagePoList: Array<ImgEntryPo> = await fetchWithRetry(options, pageUrlLink, queryParam);
+        let imagePoList: Array<ImgEntryPo> = await fetchWithRetryV2(pageUrlLink, queryParam);
         if (imagePoList.length === 0) {
             continue;
         }
@@ -78,10 +77,10 @@ export async function whSearchListLatest(queryParam: QueryParam) {
             }
         }
 
-        if (imgExistCount === imagePoList.length) {
-            printLogSync(LogLevel.INFO, `latest images have handled, no need to continue...`)
-            break;
-        }
+        // if (imgExistCount === imagePoList.length) {
+        //     printLogSync(LogLevel.INFO, `latest images have handled, no need to continue...`)
+        //     break;
+        // }
 
         printLogSync(LogLevel.INFO, `images latest search, current page:${page}, purity:${queryParam.purity},category:${queryParam.category}`);
         await delay(randomInt(1000, 3000));
@@ -110,8 +109,7 @@ export async function whSearchListDefault(queryParam: QueryParam) {
         let pageUrlLink = `${urlLink}&page=${page}`
         page += 1;
 
-        let options: RequestInit = {};
-        let imagePoList: Array<ImgEntryPo> = await fetchWithRetry(options, pageUrlLink, queryParam);
+        let imagePoList: Array<ImgEntryPo> = await fetchWithRetryV2(pageUrlLink, queryParam);
         if (imagePoList.length === 0) {
             continue;
         }

@@ -26,7 +26,7 @@ export async function fpGetPictureList() {
                 AND: [
                     {
                         urlType: {
-                            in: [UrlType.IMG, UrlType.VIDEO]
+                            in: [UrlType.IMG]
                         }
                     }
                 ]
@@ -57,7 +57,7 @@ export async function fpGetPictureList() {
                     AND: [
                         {
                             urlType: {
-                                in: [UrlType.IMG, UrlType.VIDEO]
+                                in: [UrlType.IMG]
                             }
                         }
                     ]
@@ -228,14 +228,22 @@ export async function fpCreateWithCheckExist(fpEntry: FpCelebrityDetailEntry): P
  * @param entry
  */
 export async function pmsCreateWithCheckExist(entry: ImgEntryPo): Promise<boolean> {
-    const count = await pmsClient.image.count({
+    const img = await pmsClient.image.findFirst({
         where: {
             imgId: entry.id,
         }
     });
 
-    if (count !== 0) {
+    if (img !== null && img.isUsed == IsUsedStatus.UN_USED) {
+        return true;
+    }
+
+    if (img !== null && img.isUsed === IsUsedStatus.NOT_EXIST) {
         return false;
+    }
+
+    if (img != null) {
+        return true;
     }
 
     try {
