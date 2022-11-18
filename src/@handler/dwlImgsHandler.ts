@@ -5,7 +5,7 @@ import {getFetchType, getPicOutputPath} from "../config/ConfigFile.js";
 import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import {randomInt} from "crypto";
 import {DownloadEntryPo, DownloadParams} from "../@entry/DownloadEntryPo.js";
-import {fetchImgWithRetryV2} from "../@utils/HttpUtilsV2.js";
+import {fetchImgWithRetry} from "../@utils/HttpUtils.js";
 
 export async function downloadSingleImage(param: DownloadParams) {
     let options: RequestInit = {
@@ -15,7 +15,7 @@ export async function downloadSingleImage(param: DownloadParams) {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
         }
     };
-    await fetchImgWithRetryV2(options, {
+    await fetchImgWithRetry(options, {
         category: param.category,
         purity: param.purity,
         imgId: String(param.imgId),
@@ -63,7 +63,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
         return;
     }
     let options: RequestInit = {};
-    await fetchImgWithRetryV2(options, {
+    await fetchImgWithRetry(options, {
         category: image.category,
         purity: image.purity,
         imgId: String(image.imgId),
@@ -125,7 +125,7 @@ export async function downloadImages(dwlEntryPo: DownloadEntryPo) {
                 options.agent = getHttpsProxy();
             }
 
-            let res = await fetchImgWithRetryV2(options, {
+            let res = await fetchImgWithRetry(options, {
                 category: img.category,
                 purity: img.purity,
                 imgId: String(img.imgId),

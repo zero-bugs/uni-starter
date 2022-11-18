@@ -6,14 +6,14 @@ import {ImgEntryPo} from "../@entry/ImgEntryPo.js";
 import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import {delay, getExtName} from "../@utils/Utils.js";
 
-import {pmsCreateWithCheckExist} from "../@utils/PsDbUtils.js";
+import {pmsCreateWithCheckDownload} from "../@utils/PsDbUtils.js";
 import {getApiEndpoint, getFetchType, getPicOutputPath} from "../config/ConfigFile.js";
 
 import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
 import {downloadSingleImage} from "./dwlImgsHandler.js";
 import {IsUsedStatus} from "../@entry/IsUsedStatus.js";
 import {QueryParam} from "../@entry/QueryPo.js";
-import {fetchWithRetryV2} from "../@utils/HttpUtilsV2.js";
+import {fetchWithRetry} from "../@utils/HttpUtils.js";
 
 
 export async function whSearchListLatest(queryParam: QueryParam) {
@@ -35,7 +35,14 @@ export async function whSearchListLatest(queryParam: QueryParam) {
         ++page;
         let pageUrlLink = `${urlLink}&page=${page}`
 
-        let imagePoList: Array<ImgEntryPo> = await fetchWithRetryV2(pageUrlLink, queryParam);
+        let options: RequestInit = {
+            headers: {
+                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                'accept-encoding': 'gzip, deflate, br',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+            }
+        };
+        let imagePoList: Array<ImgEntryPo> = await fetchWithRetry(options, pageUrlLink, queryParam);
         if (imagePoList.length === 0) {
             continue;
         }
@@ -56,10 +63,12 @@ export async function whSearchListLatest(queryParam: QueryParam) {
         }
 
         // write to db
-        let imgExistCount = 0;
+        let imgNoNeedDldCount = 0;
         for (const entry of imagePoList) {
             // check exist or not
-            if (await pmsCreateWithCheckExist(entry)) {
+            if (await pmsCreateWithCheckDownload(entry)) {
+                ++imgNoNeedDldCount;
+            } else {
                 await downloadSingleImage({
                     category: entry.category,
                     purity: entry.purity,
@@ -72,15 +81,13 @@ export async function whSearchListLatest(queryParam: QueryParam) {
                     extName: getExtName(entry.file_type),
                     isUsed: IsUsedStatus.UN_USED,
                 });
-            } else {
-                ++imgExistCount;
             }
         }
 
-        // if (imgExistCount === imagePoList.length) {
-        //     printLogSync(LogLevel.INFO, `latest images have handled, no need to continue...`)
-        //     break;
-        // }
+        if (imgNoNeedDldCount === imagePoList.length) {
+            printLogSync(LogLevel.CONSOLE, `latest images have handled, no need to continue...`)
+            break;
+        }
 
         printLogSync(LogLevel.INFO, `images latest search, current page:${page}, purity:${queryParam.purity},category:${queryParam.category}`);
         await delay(randomInt(1000, 3000));
@@ -109,7 +116,14 @@ export async function whSearchListDefault(queryParam: QueryParam) {
         let pageUrlLink = `${urlLink}&page=${page}`
         page += 1;
 
-        let imagePoList: Array<ImgEntryPo> = await fetchWithRetryV2(pageUrlLink, queryParam);
+        let options: RequestInit = {
+            headers: {
+                'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+                'accept-encoding': 'gzip, deflate, br',
+                'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
+            }
+        };
+        let imagePoList: Array<ImgEntryPo> = await fetchWithRetry(options, pageUrlLink, queryParam);
         if (imagePoList.length === 0) {
             continue;
         }
@@ -133,7 +147,7 @@ export async function whSearchListDefault(queryParam: QueryParam) {
         let writeDbCount = 0;
         for (const entry of imagePoList) {
             // check exist or not
-            if (await pmsCreateWithCheckExist(entry)) {
+            if (await pmsCreateWithCheckDownload(entry)) {
                 ++writeDbCount;
             }
         }

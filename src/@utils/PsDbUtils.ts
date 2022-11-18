@@ -227,19 +227,26 @@ export async function fpCreateWithCheckExist(fpEntry: FpCelebrityDetailEntry): P
  * create before check exist or not.
  * @param entry
  */
-export async function pmsCreateWithCheckExist(entry: ImgEntryPo): Promise<boolean> {
-    const img = await pmsClient.image.findFirst({
-        where: {
-            imgId: entry.id,
-        }
-    });
+export async function pmsCreateWithCheckDownload(entry: ImgEntryPo): Promise<boolean> {
+    let img = null;
+    try {
+        img= await pmsClient.image.findFirst({
+            where: {
+                imgId: entry.id,
+            }
+        });
+    } catch (error) {
+        printLogSync(LogLevel.ERROR, `find image: ${entry} failed, error msg:${error}`);
+        return false;
+    }
 
-    if (img !== null && img.isUsed == IsUsedStatus.UN_USED) {
-        return true;
+
+    if (img !== null && img.isUsed === IsUsedStatus.UN_USED) {
+        return false;
     }
 
     if (img !== null && img.isUsed === IsUsedStatus.NOT_EXIST) {
-        return false;
+        return true;
     }
 
     if (img != null) {
@@ -270,7 +277,7 @@ export async function pmsCreateWithCheckExist(entry: ImgEntryPo): Promise<boolea
         printLogSync(LogLevel.INFO, `create new entry failed, error:${e}, entry:${entry}`);
     }
 
-    return true;
+    return false;
 }
 
 

@@ -50,7 +50,7 @@ export async function main() {
     // }));
 
     pool.runTask(new WorkerTaskInfo(TaskKeyId.WH_QUERY_02, {
-        purity: '001',
+        purity: '011',
         category: '111',
         apikey: `${getApiKey()}`,
         sinceBegin: new Date("2022-06-01 00:00:00")

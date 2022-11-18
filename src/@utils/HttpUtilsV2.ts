@@ -12,8 +12,6 @@ import * as fs from "fs";
 import {getHttpsProxy} from "../config/ProxyConfig.js";
 import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
 import {IsUsedStatus} from "../@entry/IsUsedStatus.js";
-import {FappeningTbl} from "@prisma/client";
-import {getFpOutPath} from "../config/ConfigFile.js";
 import {DownloadParams} from "../@entry/DownloadEntryPo.js";
 import {QueryParam} from "../@entry/QueryPo.js";
 import {chromium} from "@playwright/test";
@@ -79,6 +77,27 @@ function getNormalizeMonth(param: DownloadParams) {
     return monthDirName;
 }
 
+const BrowserLargeSize = async () => {
+    const launchOptions = {
+        devtools: true,
+        bodySize: 1024*1024*200,
+        headless: false,
+        ignoreDefaultArgs: ['--disable-extensions', '--enable-automation'],
+        args: [`--start-maximized`],
+        timeout: 600000,
+    };
+    const browser = await chromium.launch(launchOptions);
+    const context = await browser.newContext({viewport: null});
+    return {
+        context: context,
+        newPage: () => context.newPage(),
+        close: () => browser.close(),
+    };
+};
+
+const {newPage, context} = await BrowserLargeSize();
+const maxLongWait = 60000;
+
 export async function fetchImgWithRetryV2(options: RequestInit, param: DownloadParams) {
     // 判断是否下载过
     if (param.isUsed !== IsUsedStatus.UN_USED) {
@@ -114,23 +133,9 @@ export async function fetchImgWithRetryV2(options: RequestInit, param: DownloadP
         return false;
     }
 
-    const BrowserLargeSize = async () => {
-        const launchOptions = {
-            devtools: false,
-            headless: false,
-            ignoreDefaultArgs: ['--disable-extensions', '--enable-automation'],
-            args: [`--start-maximized`],
-        };
-        const browser = await chromium.launch(launchOptions);
-        const context = await browser.newContext({viewport: null});
-        return {
-            context: context,
-            newPage: () => context.newPage(),
-            close: () => browser.close(),
-        };
-    };
+    let isEnd = false;
+    let waitTime = 0;
 
-    const {newPage, context, close} = await BrowserLargeSize();
     const page = await newPage();
     const client = await page.context().newCDPSession(page);
     await client.send('Page.setLifecycleEventsEnabled', {enabled: true});
@@ -158,7 +163,6 @@ export async function fetchImgWithRetryV2(options: RequestInit, param: DownloadP
                 }
 
                 if (response?.status() !== 200) {
-                    parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, '0', `img need download again.`, param));
                     printLogSync(LogLevel.CONSOLE, `image:${imgName} write local failed`);
                     return;
                 }
@@ -166,7 +170,7 @@ export async function fetchImgWithRetryV2(options: RequestInit, param: DownloadP
                 const arrayBuffer = await response?.body() as ArrayBuffer;
                 const buffer = Buffer.from(arrayBuffer);
                 await fs.writeFile(imgName, buffer, () => {
-                    console.log("write success.")
+                    printLogSync(LogLevel.INFO,`write:${imgName} success.`)
                 })
 
                 printLogSync(LogLevel.CONSOLE, `image:${imgName} write local success`);
@@ -180,123 +184,26 @@ export async function fetchImgWithRetryV2(options: RequestInit, param: DownloadP
             } catch (e) {
                 printLogSync(LogLevel.ERROR, `image:${imgName} write local failed, url:${param.url}, error:${e}`);
             } finally {
-                await delay(randomInt(500, 1000));
-                await close();
+                isEnd = true;
+                await page.close();
             }
         });
 
         await page.goto(param.url, {
             waitUntil: 'networkidle',
+            timeout: 60000,
         });
+
+        //等待异步数据写完毕。
+        while (!isEnd && waitTime < maxLongWait) {
+            await delay(1000);
+            waitTime += 1000;
+        }
+        if (waitTime === maxLongWait) {
+            await page.close();
+        }
     } catch (error) {
         printLogSync(LogLevel.ERROR, `http failed, type:${typeof error}, error msg:${error}`);
-        parentPort?.postMessage(new PostMsgEventEntry(PostMsgIdEnum.EVENT_FAIL_RETRY, '0', `img need download again.`, param));
         await delay(randomInt(2000, 4000));
     }
-}
-
-export async function fetchFpImgWithRetry(options: RequestInit, param: FappeningTbl) {
-    // 判断是否下载过
-    if (param.isUsed !== IsUsedStatus.UN_USED) {
-        return false;
-    }
-
-    let proxy = getHttpsProxy();
-    if (proxy) {
-        options.agent = getHttpsProxy();
-    }
-    if (param.url === null || param.title === null) {
-        printLogSync(LogLevel.ERROR, `url or title is null for url:${param.url}`);
-        return false;
-    }
-
-    // 目录考虑时间，判断目录是否存在
-    let dldPath = `${getFpOutPath()}/${param.name}/${param.title.replaceAll("?", "").replaceAll(":", "")}`
-    if (!fs.existsSync(dldPath)) {
-        fs.mkdirSync(dldPath, {recursive: true});
-    }
-
-    // 判断文件是否存在
-    let imgNameArr = param.url?.trim().split('/');
-    if (imgNameArr === undefined || imgNameArr === null) {
-        printLogSync(LogLevel.ERROR, `obtain image name failed for url:${param.url}`);
-        return false;
-    }
-    let imgName = `${dldPath}/${imgNameArr[imgNameArr.length - 1]}`;
-    if (fs.existsSync(imgName)) {
-        await pmsClient.fappeningTbl.update({
-            where: {id: param.id},
-            data: {
-                isUsed: IsUsedStatus.USED,
-            }
-        });
-        return false;
-    }
-
-    let retry = 0;
-    while (retry < maxRetryCount) {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => {
-            controller.abort();
-        }, 300000);
-        options.signal = controller.signal;
-
-        try {
-            printLogSync(LogLevel.INFO, `begin to download img, url:${param.url}`);
-            const response = await fetch(param.url, options);
-            if (response.status === 404) {
-                await pmsClient.fappeningTbl.update({
-                    where: {id: param.id},
-                    data: {
-                        isUsed: IsUsedStatus.NOT_EXIST,
-                    }
-                });
-
-                printLogSync(LogLevel.INFO, `image not exist, url:${param.url}, response:${response.status}, ${await response.text()}`);
-                break;
-            }
-            if (response.status !== 200 && response.status !== 201) {
-                printLogSync(LogLevel.INFO, `worker execute download failed url:${param.url}, response:${response.status}, ${await response.text()}`);
-                ++retry;
-                continue;
-            }
-
-            printLogSync(LogLevel.INFO, `begin to write img: postId:${param.postId}, name:${param.name}, title:${param.title}`);
-            const arrayBuffer = await response.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-
-            fs.appendFile(imgName, buffer, (err) => {
-                if (err) {
-                    printLogSync(LogLevel.CONSOLE, `image:${imgName} write local failed, err:${err}`);
-                } else {
-                    printLogSync(LogLevel.CONSOLE, `image:${imgName} write local success`);
-                }
-            });
-
-            await pmsClient.fappeningTbl.update({
-                where: {id: param.id},
-                data: {
-                    isUsed: IsUsedStatus.USED,
-                }
-            });
-
-            return true;
-        } catch (error) {
-            printLogSync(LogLevel.ERROR, `http failed, type:${typeof error}, retry:${retry}, error msg:${error}`);
-            ++retry;
-            if (retry === maxRetryCount) {
-                printLogSync(LogLevel.ERROR, `http request failed count has reached max, url:${param.url}`);
-                await pmsClient.fappeningTbl.update({
-                    where: {id: param.id},
-                    data: {
-                        isUsed: IsUsedStatus.NOT_LINK,
-                    }
-                });
-            }
-            await delay(randomInt(2000, 4000));
-        } finally {
-            clearTimeout(timeout);
-        }
-    }
-    return false;
 }
