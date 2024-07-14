@@ -33,6 +33,12 @@ export async function fetchWithRetryV2(pageUrlLink: string, queryParam: QueryPar
     let retry = 0;
     while (retry < maxRetryCount) {
         try {
+            page.on('response',async response => {
+               console.log(await response.allHeaders());
+            });
+            page.on('requestfinished', async request => {
+                console.log(await request.allHeaders());
+            })
             await page.goto(pageUrlLink, {
                 timeout: 600000,
             });

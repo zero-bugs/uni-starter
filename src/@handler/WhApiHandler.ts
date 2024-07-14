@@ -7,7 +7,7 @@ import {LogLevel, printLogSync} from "../@log/Log4js.js";
 import {delay, getExtName} from "../@utils/Utils.js";
 
 import {pmsCreateWithCheckDownload} from "../@utils/PsDbUtils.js";
-import {getApiEndpoint, getFetchType, getPicOutputPath} from "../config/ConfigFile.js";
+import {getApiEndpoint, getContinueSwitch, getFetchType, getPicOutputPath} from "../config/ConfigFile.js";
 
 import {PostMsgEventEntry, PostMsgIdEnum} from "../@entry/PostMsgEventEntry.js";
 import {downloadSingleImage} from "./dwlImgsHandler.js";
@@ -84,7 +84,7 @@ export async function whSearchListLatest(queryParam: QueryParam) {
             }
         }
 
-        if (imgNoNeedDldCount === imagePoList.length) {
+        if (imgNoNeedDldCount === imagePoList.length && !getContinueSwitch()) {
             printLogSync(LogLevel.CONSOLE, `latest images have handled, no need to continue...`)
             break;
         }

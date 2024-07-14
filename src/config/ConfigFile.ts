@@ -65,6 +65,9 @@ export function getPicOutputPath() {
     return globalConfig['picOutputPath'];
 }
 
+export function getContinueSwitch() {
+    return globalConfig['continueSwitch']
+}
 
 export const pwConfigList = JSON.parse(
     fs.readFileSync(getPwListFile(), "utf-8")

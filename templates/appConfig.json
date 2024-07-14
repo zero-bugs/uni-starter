@@ -1,5 +1,6 @@
 {
   "type": "wh",
-  "picOutputPath": "E:\\temp",
-  "apikey": "eJzZkDrNTugYr5O61IIbeZ5ZQBLYpVow"
+  "picOutputPath": "E:/temp",
+  "apikey": "eJzZkDrNTugYr5O61IIbeZ5ZQBLYpVow",
+  "continueSwitch": true
 }
